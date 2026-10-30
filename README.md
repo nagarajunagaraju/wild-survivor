@@ -19,6 +19,8 @@ Every push to `main` builds a fresh APK automatically (Actions tab).
 - Fork decisions read from clues: river (crocodile / slippery rocks / logs), gorge (bridges), rock wall (bear den / thorns / daylight), rockslide (shadows), forest fire (flames / embers / stream)
 - Survival: health, energy (fruit), water (bottles), first-aid kits
 - Power-ups: Shield, Magnet, Slow-mo, Double jump, each with an on-screen timer
+- Cinematic look: bloom, filmic tone curve and colour grade, vignette, film grain, sun shafts through the canopy, dappled leaf shadows on the trail, letterboxed tiger intro (tap to skip), slow-motion close calls, side-camera tiger pounce on death, camera roll on lane changes, music that swells as the tiger closes in
+- Premium UI: Bebas Neue / Barlow (bundled), glass HUD with icons
 - Modes: Endless, Daily (same seeded course for everyone each day, best saved), Hardcore (1.6x damage, one wrong fork ends the run, double coins)
 - 19 missions (+50 coins each), coin wallet, character unlock, saved progress
 - Natural forest: instanced broadleaf trees with swaying leaves, a ragged-edged forest trail with pebbles, leaves and twigs, leaf-litter forest floor, grass clumps, fern bushes, mossy displaced rocks, bark-textured logs and stumps
@@ -32,6 +34,7 @@ Every push to `main` builds a fresh APK automatically (Actions tab).
 Asset credits: `www/models/CREDITS.txt` and `www/sounds/CREDITS.txt`.
 
 ## Project layout
+- `src_game.html` – single-file game source (edit this). `python3 build_www.py src_game.html www/index.html` produces the offline page used in the APK
 - `www/` – the game (three.js r128, offline; models in `www/models/`)
 - `android/` – Capacitor 7 Android wrapper (portrait, full-screen, keeps screen on)
 - `.github/workflows/android.yml` – builds the APK (and the Play Store AAB once signing is set up)
