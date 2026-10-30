@@ -428,7 +428,7 @@ const CHARS = [
   {id: 'shadow', name: 'Shadow', desc: 'Test athlete who escaped a research camp. Built to run.', file: 'Xbot.glb', idle: 'idle', run: 'run', cost: 300}
 ];
 /* Shared Mixamo motion-capture clips; any Mixamo-rigged character can use them. */
-const SHARED_ANIMS = {run: 'anim_run.glb', jump: 'anim_jump.glb', slide: 'anim_slide.glb', hit: 'anim_hit.glb', death: 'anim_death.glb'};
+const SHARED_ANIMS = {run: 'anim_run.glb', jump: 'anim_jump.glb', slide: 'anim_slide.glb', hit: 'anim_hit.glb', death: 'anim_death.glb', fall: 'anim_fall.glb'};
 const shared = {};
 let fallbackRun = null;
 function cleanClip(clip, keepHipsY){
@@ -457,7 +457,7 @@ function buildActs(L){
   const own = n => L.clips.find(a => a.name.toLowerCase() === n.toLowerCase());
   const add = (k, clip, keepY) => { if (!clip || A[k]) return; const a = L.mixer.clipAction(cleanClip(clip, keepY)); A[k] = a; };
   add('idle', own(L.def.idle || '') || (L.def.idle ? null : L.clips[0]), true);
-  if (L.def.shared){ add('run', shared.run || fallbackRun, !!shared.run); ['jump', 'slide', 'hit', 'death'].forEach(k => add(k, shared[k], true)); }
+  if (L.def.shared){ add('run', shared.run || fallbackRun, !!shared.run); ['jump', 'slide', 'hit', 'death', 'fall'].forEach(k => add(k, shared[k], true)); }
   else add('run', own(L.def.run || 'Run'), true);
   if (!L.cur && A.idle){ A.idle.play(); L.cur = 'idle'; }
 }
@@ -831,8 +831,8 @@ window.addEventListener('keydown', e => {
   if (k.startsWith('Arrow') || k === ' ') e.preventDefault();
 });
 function togglePause(){
-  if (phase === 'play'){ phase = 'paused'; $('pauseSheet').hidden = false; }
-  else if (phase === 'paused'){ phase = 'play'; $('pauseSheet').hidden = true; clock.getDelta(); }
+  if (phase === 'play'){ phase = 'paused'; $('pauseSheet').hidden = false; try { ac && ac.suspend(); } catch (e) {} }
+  else if (phase === 'paused'){ phase = 'play'; $('pauseSheet').hidden = true; clock.getDelta(); try { ac && ac.resume(); } catch (e) {} }
 }
 $('pauseBtn').onclick = togglePause; $('resume').onclick = togglePause;
 $('quit').onclick = () => { $('pauseSheet').hidden = true; toMenu(); };
@@ -890,14 +890,60 @@ function audioInit(){
     const d = noiseBuf.getChannelData(0); for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
     const src = ac.createBufferSource(); src.buffer = noiseBuf; src.loop = true;
     const f = ac.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 420;
-    const g = ac.createGain(); g.gain.value = .03; src.connect(f).connect(g).connect(master); src.start();
+    const g = ac.createGain(); g.gain.value = .012; src.connect(f).connect(g).connect(master); src.start();
+    loadSounds();
   } catch (e) { ac = null; }
+}
+/* ---------- recorded sound bank (Pixabay, free licence) ---------- */
+const SND_BASE = window.WS_SND_BASE || 'sounds/';
+const SND = {}, LOOPS = {};
+const SND_LIST = ['forest', 'river', 'rain', 'breath', 'heart', 'run', 'fire', 'roar', 'tree', 'splash', 'coin', 'thunder'];
+function loadSounds(){
+  if (!ac) return;
+  SND_LIST.forEach(n => {
+    if (n in SND) return; SND[n] = null;
+    const url = (window.WS_SND_URLS && window.WS_SND_URLS[n + '.mp3']) || SND_BASE + n + '.mp3';
+    fetch(url).then(r => r.arrayBuffer()).then(b => new Promise((ok, no) => ac.decodeAudioData(b, ok, no))).then(buf => { SND[n] = buf; }).catch(() => {});
+  });
+}
+function playS(n, vol = 1, rate = 1){
+  const b = SND[n]; if (!ac || !b) return false;
+  try { const src = ac.createBufferSource(); src.buffer = b; src.playbackRate.value = rate; const g = ac.createGain(); g.gain.value = vol; src.connect(g).connect(master); src.start(); } catch (e) {}
+  return true;
+}
+function loopS(n, vol, rate){
+  const b = SND[n]; if (!ac || !b) return;
+  let L = LOOPS[n];
+  if (!L){
+    if (vol <= .002) return;
+    try { const src = ac.createBufferSource(); src.buffer = b; src.loop = true; const g = ac.createGain(); g.gain.value = 0; src.connect(g).connect(master); src.start(0, Math.random() * b.duration * .8); L = LOOPS[n] = {src, g, v: 0}; } catch (e) { return; }
+  }
+  if (Math.abs(L.v - vol) > .005){ L.v = vol; L.g.gain.setTargetAtTime(vol, ac.currentTime, .18); }
+  if (rate){ L.src.playbackRate.setTargetAtTime(rate, ac.currentTime, .12); }
+}
+function audioUpdate(night){
+  if (!ac || !master) return;
+  const play = phase === 'play', live = play || phase === 'dying';
+  let river = 0, fire = 0;
+  for (const e of events){
+    const d = Math.abs(S.z - (e.z0 - 6));
+    if (e.type === 'river') river = Math.max(river, 1 - d / 50);
+    if (e.type === 'fire') fire = Math.max(fire, 1 - d / 45);
+  }
+  const wet = events.some(e => e.water && S.z < e.z0 && S.z > e.z0 - 12);
+  loopS('forest', (phase === 'menu' ? .45 : .32) * (1 - night * .55) * (1 - rainAmt * .5));
+  loopS('rain', live ? rainAmt * .6 : 0);
+  loopS('river', live ? Math.max(0, river) * .6 : 0);
+  loopS('fire', live ? Math.max(0, fire) * .8 : 0);
+  loopS('run', play && S.y === 0 && S.slide <= 0 && !wet ? .5 : 0, Math.max(.8, Math.min(1.6, S.speed / 15)) * (S.pw.slow > 0 ? .6 : 1));
+  loopS('breath', play ? 1.6 * (.3 + (1 - S.en / 100) * .7) : 0, 1 + (1 - S.en / 100) * .2);
+  loopS('heart', live && S.gap < 42 ? .25 + (1 - S.gap / 42) * .9 : 0, 1 + Math.max(0, 42 - S.gap) / 70);
 }
 let rainGain = null;
 function setRainSound(a){
   if (!ac) return;
   if (!rainGain){ try { const s = ac.createBufferSource(); s.buffer = noiseBuf; s.loop = true; const f = ac.createBiquadFilter(); f.type = 'highpass'; f.frequency.value = 1400; rainGain = ac.createGain(); rainGain.gain.value = 0; s.connect(f).connect(rainGain).connect(master); s.start(); } catch (e) { return; } }
-  rainGain.gain.value = a * .14;
+  rainGain.gain.value = SND.rain ? 0 : a * .14;
 }
 function tone(f, d, type = 'sine', v = .08, t0 = 0, f2){
   if (!ac) return;
@@ -908,28 +954,28 @@ function noise(d, freq, v = .15, type = 'lowpass', t0 = 0, f2){
   try { const t = ac.currentTime + t0, s = ac.createBufferSource(); s.buffer = noiseBuf; const f = ac.createBiquadFilter(); f.type = type; f.frequency.setValueAtTime(freq, t); if (f2) f.frequency.exponentialRampToValueAtTime(f2, t + d); const g = ac.createGain(); g.gain.setValueAtTime(v, t); g.gain.exponentialRampToValueAtTime(.0001, t + d); s.connect(f).connect(g).connect(master); s.start(t, Math.random()); s.stop(t + d + .05); } catch (e) {}
 }
 const sfx = {
-  coin: () => { tone(1320, .08, 'sine', .06); tone(1760, .12, 'sine', .05, .06); },
+  coin: () => { if (playS('coin', .35, .95 + Math.random() * .1)) return; tone(1320, .08, 'sine', .06); tone(1760, .12, 'sine', .05, .06); },
   eat: () => { tone(380, .14, 'triangle', .09, 0, 820); noise(.08, 3000, .04, 'highpass'); },
   med: () => [523, 659, 784].forEach((f, i) => tone(f, .16, 'triangle', .07, i * .06)),
   jump: () => noise(.2, 500, .09, 'bandpass', 0, 2200),
   slide: () => noise(.32, 1800, .08, 'bandpass', 0, 350),
   lane: () => noise(.07, 2600, .04, 'highpass'),
   hit: () => { noise(.28, 900, .35, 'lowpass', 0, 140); tone(110, .26, 'square', .08, 0, 55); },
-  roar: () => { noise(1.1, 420, .45, 'lowpass', 0, 110); tone(92, 1.0, 'sawtooth', .11, 0, 58); tone(138, .8, 'sawtooth', .06, .06, 74); },
+  roar: () => { if (playS('roar', 1, .92 + Math.random() * .12)) return; noise(1.1, 420, .45, 'lowpass', 0, 110); tone(92, 1.0, 'sawtooth', .11, 0, 58); tone(138, .8, 'sawtooth', .06, .06, 74); },
   tick: () => tone(1050, .04, 'square', .03),
   good: () => [523, 659, 784, 1046].forEach((f, i) => tone(f, .18, 'triangle', .07, i * .07)),
   mid: () => { tone(330, .18, 'triangle', .07); tone(262, .22, 'triangle', .06, .1); },
   bad: () => { tone(200, .45, 'sawtooth', .09, 0, 60); noise(.4, 600, .25, 'lowpass', 0, 100); },
-  step: (w) => w ? noise(.12, 1800, .12, 'bandpass', 0, 600) : noise(.06, 300, .07, 'lowpass'),
+  step: (w) => { if (w){ if (!playS('splash', .28, 1.1 + Math.random() * .3)) noise(.12, 1800, .12, 'bandpass', 0, 600); } else if (!SND.run) noise(.06, 300, .07, 'lowpass'); },
   land: () => { noise(.14, 220, .2, 'lowpass'); tone(70, .12, 'sine', .12, 0, 45); },
   drink: () => { tone(300, .1, 'sine', .07, 0, 520); tone(420, .1, 'sine', .05, .08, 700); },
   power: () => [660, 880, 1100, 1320].forEach((f, i) => tone(f, .14, 'square', .035, i * .05)),
   shield: () => { tone(900, .25, 'triangle', .08, 0, 300); noise(.2, 3000, .08, 'highpass'); },
-  creak: () => { tone(90, .9, 'sawtooth', .05, 0, 160); noise(.6, 600, .06, 'bandpass', 0, 300); },
-  crash: () => { noise(.7, 700, .4, 'lowpass', 0, 90); tone(70, .5, 'sine', .2, 0, 40); },
-  thunder: () => { noise(2.6, 300, .5, 'lowpass', .25, 60); noise(.4, 2000, .2, 'lowpass', 0, 400); },
-  breath: (h) => { noise(.32, 900, .025 + h * .05, 'bandpass', 0, 600); },
-  heart: () => { tone(60, .12, 'sine', .22); tone(52, .14, 'sine', .18, .17); },
+  creak: () => { if (playS('tree', .9)) return; tone(90, .9, 'sawtooth', .05, 0, 160); noise(.6, 600, .06, 'bandpass', 0, 300); },
+  crash: () => { if (SND.tree) return; noise(.7, 700, .4, 'lowpass', 0, 90); tone(70, .5, 'sine', .2, 0, 40); },
+  thunder: () => { if (playS('thunder', .9, .9 + Math.random() * .2)) return; noise(2.6, 300, .5, 'lowpass', .25, 60); noise(.4, 2000, .2, 'lowpass', 0, 400); },
+  breath: (h) => { if (SND.breath) return; noise(.32, 900, .025 + h * .05, 'bandpass', 0, 600); },
+  heart: () => { if (SND.heart) return; tone(60, .12, 'sine', .22); tone(52, .14, 'sine', .18, .17); },
   bird: () => { const b = 2100 + Math.random() * 1400; tone(b, .1, 'sine', .022, 0, b * 1.4); tone(b * 1.1, .09, 'sine', .018, .14, b * .85); }
 };
 const muteBtn = $('mute');
@@ -973,6 +1019,7 @@ function update(dt){
   }
   if (rainAmt > .7 && phase === 'play'){ thunderT -= dt; if (thunderT < 0){ thunderT = 7 + Math.random() * 10; lightning = 1; sfx.thunder(); } }
   setRainSound(phase === 'play' || phase === 'dying' ? rainAmt : 0);
+  audioUpdate(night);
   torch.intensity = night * 1.6; torch.position.set(S.x, 2.6, pz - 3);
   ffMat.opacity = night * .9;
   if (phase === 'play'){
@@ -1141,7 +1188,8 @@ function update(dt){
       if (S.slide > 0 && hasAct('slide')){ want = 'slide'; once = true; }
       else if (S.y > .05 && hasAct('jump')){ want = 'jump'; once = true; }
       else if (S.hitT > 0 && hasAct('hit')){ want = 'hit'; once = true; }
-    } else if ((phase === 'dying' || phase === 'over') && hasAct('death')){ want = 'death'; once = true; }
+    } else if ((phase === 'dying' || phase === 'over') && S.gap <= 0 && hasAct('fall')){ want = 'fall'; once = true; }
+    else if ((phase === 'dying' || phase === 'over') && hasAct('death')){ want = 'death'; once = true; }
     else if (phase === 'dying' || phase === 'over') want = 'idle';
     if (curL){
       playAct(want, once, want === 'run' ? .2 : .12);
@@ -1159,7 +1207,7 @@ function update(dt){
       else if (S.y <= .05 && S.slide <= 0) hero.rotation.x = -.06;
       if (S.y > .05 && hasAct('jump')) hero.position.y = -Math.min(S.y, .55);
       hero.rotation.z = (LANES[S.lane] - S.x) * .14;
-    } else if ((phase === 'dying' || phase === 'over') && !hasAct('death')){
+    } else if ((phase === 'dying' || phase === 'over') && !hasAct('death') && !(S.gap <= 0 && hasAct('fall'))){
       hero.rotation.x = Math.min(1.45, S.overT * 2.4) * (S.gap <= 0 ? -1 : 1);
     }
   }

@@ -21,7 +21,8 @@ Every push to `main` builds a fresh APK automatically (Actions tab).
 - Missions (+50 coins each), coin wallet, character unlock, saved progress
 - Textured dirt road, wind-swept grass, sky with sun, drifting clouds and stars, rippling river water
 - Footstep dust, landing dust, water splashes, rain splashes, fire sparks, coin sparkles
-- Day/night cycle, rain and thunderstorms, fireflies, breathing/heartbeat audio
+- Recorded sound: forest ambience, rain, thunder, river, fire, running footsteps synced to speed, breathing that gets heavier as energy drops, heartbeat as the tiger closes in, tiger roar, falling trees, splashes (credits in `www/sounds/CREDITS.txt`)
+- Day/night cycle, rain and thunderstorms, fireflies
 - Graphics High/Low setting for slower phones
 
 ## Project layout
