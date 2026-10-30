@@ -438,7 +438,7 @@ const CHARS = [
   {id: 'shadow', name: 'Shadow', desc: 'Test athlete who escaped a research camp. Built to run.', file: 'Xbot.glb', idle: 'idle', run: 'run', cost: 300}
 ];
 /* Shared Mixamo motion-capture clips; any Mixamo-rigged character can use them. */
-const SHARED_ANIMS = {run: 'anim_run.glb', jump: 'anim_jump.glb', slide: 'anim_slide.glb', hit: 'anim_hit.glb', death: 'anim_death.glb', fall: 'anim_fall.glb'};
+const SHARED_ANIMS = {run: 'anim_run.glb', jump: 'anim_jump.glb', slide: 'anim_slide.glb', hit: 'anim_hit.glb', death: 'anim_death.glb', fall: 'anim_fall.glb', hithead: 'anim_hithead.glb'};
 const shared = {};
 let fallbackRun = null;
 function cleanClip(clip, keepHipsY){
@@ -467,7 +467,7 @@ function buildActs(L){
   const own = n => L.clips.find(a => a.name.toLowerCase() === n.toLowerCase());
   const add = (k, clip, keepY) => { if (!clip || A[k]) return; const a = L.mixer.clipAction(cleanClip(clip, keepY)); A[k] = a; };
   add('idle', own(L.def.idle || '') || (L.def.idle ? null : L.clips[0]), true);
-  if (L.def.shared){ add('run', shared.run || fallbackRun, !!shared.run); ['jump', 'slide', 'hit', 'death', 'fall'].forEach(k => add(k, shared[k], true)); }
+  if (L.def.shared){ add('run', shared.run || fallbackRun, !!shared.run); ['jump', 'slide', 'hit', 'death', 'fall', 'hithead'].forEach(k => add(k, shared[k], true)); }
   else add('run', own(L.def.run || 'Run'), true);
   if (!L.cur && A.idle){ A.idle.play(); L.cur = 'idle'; }
 }
@@ -858,7 +858,7 @@ function inEventZone(z){ return events.some(e => z < e.z0 + 16 && z > e.z0 - 20)
 function hit(dmg, why){
   if (S.inv > 0) return;
   if (S.pw.shield > 0){ S.pw.shield = 0; S.inv = .7; shake = .25; sfx.shield(); buzz(30); toast('Shield blocked it!', why.replace('!', ''), 'good'); return; }
-  S.lastHitDist = S.dist; dust(8, true); S.hitT = .55;
+  S.lastHitDist = S.dist; dust(8, true); S.hitT = .55; S.hitKind = /head|tree/i.test(why) ? 'hithead' : 'hit';
   if (S.mode === 'hard') dmg = Math.round(dmg * 1.6);
   S.hp -= dmg; S.gap -= 22; S.inv = .8; S.stumble = .7; shake = .5;
   flash(); sfx.hit(); buzz([40, 30, 60]);
@@ -1288,6 +1288,7 @@ function update(dt){
       want = 'run';
       if (S.slide > 0 && hasAct('slide')){ want = 'slide'; once = true; }
       else if (S.y > .05 && hasAct('jump')){ want = 'jump'; once = true; }
+      else if (S.hitT > 0 && hasAct(S.hitKind || 'hit')){ want = S.hitKind || 'hit'; once = true; }
       else if (S.hitT > 0 && hasAct('hit')){ want = 'hit'; once = true; }
     } else if ((phase === 'dying' || phase === 'over') && S.gap <= 0 && hasAct('fall')){ want = 'fall'; once = true; }
     else if ((phase === 'dying' || phase === 'over') && hasAct('death')){ want = 'death'; once = true; }
@@ -1299,6 +1300,7 @@ function update(dt){
       if (A.jump) A.jump.timeScale = A.jump.getClip().duration / .8 * slowK2;
       if (A.slide) A.slide.timeScale = A.slide.getClip().duration / .85 * slowK2;
       if (A.hit) A.hit.timeScale = 1.4;
+      if (A.hithead) A.hithead.timeScale = 1.5;
     }
     if (mixer) mixer.update(dt);
     hero.rotation.set(0, 0, 0); hero.position.set(0, 0, 0);
