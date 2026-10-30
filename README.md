@@ -13,12 +13,14 @@ Every push to `main` builds a fresh APK automatically (Actions tab).
 - Remy: realistic rigged character with Mixamo motion-capture idle, run, jump, hit and death animations
 - Ranger and Shadow (unlocks for 300 coins) as extra runners
 - Swipe controls: left/right lanes, up jump, down slide (arrow keys on desktop)
-- Tiger chase meter: hits let the tiger close in; camera pulls back so you see it
+- Tiger chase: a striped, galloping tiger with snapping jaws closes in when you get hit; the camera rises so you see it behind you
+- Crocodile that lunges and snaps when you pick its lane; bear that rears up out of the den roaring
 - Obstacles: boulders, stumps, logs, snakes, low branches, charging boars, falling trees
 - Fork decisions read from clues: river (crocodile / slippery rocks / logs), gorge (bridges), rock wall (bear den / thorns / daylight), rockslide (shadows), forest fire (flames / embers / stream)
 - Survival: health, energy (fruit), water (bottles), first-aid kits
 - Power-ups: Shield, Magnet, Slow-mo, Double jump, each with an on-screen timer
-- Missions (+50 coins each), coin wallet, character unlock, saved progress
+- Modes: Endless, Daily (same seeded course for everyone each day, best saved), Hardcore (1.6x damage, one wrong fork ends the run, double coins)
+- 19 missions (+50 coins each), coin wallet, character unlock, saved progress
 - Textured dirt road, wind-swept grass, sky with sun, drifting clouds and stars, rippling river water
 - Footstep dust, landing dust, water splashes, rain splashes, fire sparks, coin sparkles
 - Recorded sound: forest ambience, rain, thunder, river, fire, running footsteps synced to speed, breathing that gets heavier as energy drops, heartbeat as the tiger closes in, tiger roar, falling trees, splashes (credits in `www/sounds/CREDITS.txt`)
