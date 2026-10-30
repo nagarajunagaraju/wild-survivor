@@ -21,11 +21,15 @@ Every push to `main` builds a fresh APK automatically (Actions tab).
 - Power-ups: Shield, Magnet, Slow-mo, Double jump, each with an on-screen timer
 - Modes: Endless, Daily (same seeded course for everyone each day, best saved), Hardcore (1.6x damage, one wrong fork ends the run, double coins)
 - 19 missions (+50 coins each), coin wallet, character unlock, saved progress
-- Textured dirt road, wind-swept grass, sky with sun, drifting clouds and stars, rippling river water
+- Natural forest: instanced broadleaf trees with swaying leaves, a ragged-edged forest trail with pebbles, leaves and twigs, leaf-litter forest floor, grass clumps, fern bushes, mossy displaced rocks, bark-textured logs and stumps
+- Real crocodile model that surfaces and snaps in the river
+- Sky with sun, drifting clouds and stars, rippling river water
 - Footstep dust, landing dust, water splashes, rain splashes, fire sparks, coin sparkles
 - Recorded sound: forest ambience, rain, thunder, river, fire, running footsteps synced to speed, breathing that gets heavier as energy drops, heartbeat as the tiger closes in, tiger roar, falling trees, splashes (credits in `www/sounds/CREDITS.txt`)
 - Day/night cycle, rain and thunderstorms, fireflies
 - Graphics High/Low setting for slower phones
+
+Asset credits: `www/models/CREDITS.txt` and `www/sounds/CREDITS.txt`.
 
 ## Project layout
 - `www/` – the game (three.js r128, offline; models in `www/models/`)
