@@ -2,3 +2,6 @@ node_modules/
 .DS_Store
 *.jks
 *.keystore
+
+# shared debug key for test APK updates (not a release key)
+!android/app/debug-shared.keystore

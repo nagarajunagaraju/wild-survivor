@@ -17,6 +17,14 @@ android {
         }
     }
     signingConfigs {
+        // Fixed debug key kept in the repo so every CI build has the same signature
+        // and new test APKs install over old ones. Not used for Play Store releases.
+        debug {
+            storeFile file("debug-shared.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
         release {
             if (System.getenv("KEYSTORE_FILE")) {
                 storeFile file(System.getenv("KEYSTORE_FILE"))
