@@ -1,0 +1,8 @@
+{
+  "appId": "com.nagaraju.wildsurvivor",
+  "appName": "Wild Survivor",
+  "webDir": "www",
+  "android": {
+    "backgroundColor": "#0b1510"
+  }
+}
