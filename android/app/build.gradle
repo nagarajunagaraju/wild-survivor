@@ -4,7 +4,7 @@ android {
     namespace "com.nagaraju.wildsurvivor"
     compileSdk rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.nagaraju.wildsurvivor"
+        applicationId "in.nagaraju.wildsurvivor"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode((System.getenv("VERSION_CODE") ?: "1").toInteger())
