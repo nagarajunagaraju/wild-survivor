@@ -560,6 +560,20 @@ for (let i = 0; i < 9; i++){
   tailSegs.push(seg); tParent = seg;
 }
 scene.add(tiger);
+/* Real tiger model (photo-textured, rigged run cycle). The shape-built tiger above stays as a fallback. */
+let tigerModel = null, tigerMixer = null;
+function loadTiger(){
+  try {
+    new THREE.GLTFLoader().load((window.WS_MODEL_URLS && window.WS_MODEL_URLS['tiger.glb']) || MODEL_BASE + 'tiger.glb', gl => {
+      const m = gl.scene; m.traverse(o => { if (o.isMesh){ o.castShadow = true; o.frustumCulled = false; if (o.material.map) o.material.map.anisotropy = 4; } });
+      m.rotation.y = PI; m.scale.setScalar(1.05);
+      const holder = new THREE.Group(); holder.add(m); tiger.add(holder);
+      tigerModel = holder; tigerMixer = new THREE.AnimationMixer(m);
+      if (gl.animations[0]) tigerMixer.clipAction(gl.animations[0]).play();
+      tBody.visible = false;
+    }, undefined, () => {});
+  } catch (e) {}
+}
 
 /* ================= obstacles, items, events ================= */
 let obs = [], items = [], events = [];
@@ -1000,7 +1014,7 @@ function loadSounds(){
   SND_LIST.forEach(n => {
     if (n in SND) return; SND[n] = null;
     const url = (window.WS_SND_URLS && window.WS_SND_URLS[n + '.mp3']) || SND_BASE + n + '.mp3';
-    fetch(url).then(r => r.arrayBuffer()).then(b => new Promise((ok, no) => ac.decodeAudioData(b, ok, no))).then(buf => { SND[n] = buf; }).catch(() => {});
+    fetch(url).then(r => r.arrayBuffer()).then(b => new Promise((ok, no) => { const pr = ac.decodeAudioData(b, ok, no); if (pr && pr.catch) pr.catch(no); })).then(buf => { SND[n] = buf; }).catch(() => {});
   });
 }
 function playS(n, vol = 1, rate = 1){
@@ -1320,6 +1334,11 @@ function update(dt){
   tiger.visible = phase !== 'menu';
   tiger.position.z = S.z + 1.4 + tg * .16; tiger.position.x += (S.x - tiger.position.x) * Math.min(1, dt * 3);
   tiger.position.y = phase === 'dying' ? Math.max(0, Math.sin(Math.min(1, S.overT * 1.6) * PI) * 1.6) : 0;
+  if (tigerModel){
+    tigerMixer.timeScale = phase === 'dying' ? .45 : Math.max(.7, S.speed / 14) * (S.pw && S.pw.slow > 0 ? .55 : 1);
+    tigerMixer.update(dt);
+    tigerModel.rotation.x = phase === 'dying' ? -.4 : 0;
+  }
   const gf = elapsed * 11.5;
   tLegs.forEach(L => { const a = gf + L.ph; L.hip.rotation.x = Math.sin(a) * .8; L.knee.rotation.x = (L.front ? -1 : 1) * Math.max(0, Math.sin(a - 1.1)) * 1.15; });
   tBody.rotation.x = phase === 'dying' ? -.45 : Math.sin(gf) * .07;
@@ -1388,7 +1407,7 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
-S = freshState(); resize(); renderPickers(); renderBest(); syncMute(); loadChars(); applyGfx(); renderMenu();
+S = freshState(); resize(); renderPickers(); renderBest(); syncMute(); loadChars(); loadTiger(); applyGfx(); renderMenu();
 loop();
 })();
 </script>

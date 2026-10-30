@@ -13,7 +13,7 @@ Every push to `main` builds a fresh APK automatically (Actions tab).
 - Remy: realistic rigged character with Mixamo motion-capture idle, run, jump, hit and death animations
 - Ranger and Shadow (unlocks for 300 coins) as extra runners
 - Swipe controls: left/right lanes, up jump, down slide (arrow keys on desktop)
-- Tiger chase: a striped, galloping tiger with snapping jaws closes in when you get hit; the camera rises so you see it behind you
+- Tiger chase: a photo-textured rigged tiger with a real run cycle (from Sketchfab "running tiger"; check its licence and credit the author before release), with the shape-built tiger as fallback. It with snapping jaws closes in when you get hit; the camera rises so you see it behind you
 - Crocodile that lunges and snaps when you pick its lane; bear that rears up out of the den roaring
 - Obstacles: boulders, stumps, logs, snakes, low branches, charging boars, falling trees
 - Fork decisions read from clues: river (crocodile / slippery rocks / logs), gorge (bridges), rock wall (bear den / thorns / daylight), rockslide (shadows), forest fire (flames / embers / stream)
