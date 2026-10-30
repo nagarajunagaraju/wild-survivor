@@ -10,7 +10,8 @@ Tap the `.apk` file, then allow installs from your browser when Android asks.
 Every push to `main` builds a fresh APK automatically (Actions tab).
 
 ## What's in the game
-- Real rigged 3D runners with motion-captured run and idle animations (2 characters; Shadow unlocks for 300 coins)
+- Remy: realistic rigged character with Mixamo motion-capture idle, run, jump, hit and death animations
+- Ranger and Shadow (unlocks for 300 coins) as extra runners
 - Swipe controls: left/right lanes, up jump, down slide (arrow keys on desktop)
 - Tiger chase meter: hits let the tiger close in; camera pulls back so you see it
 - Obstacles: boulders, stumps, logs, snakes, low branches, charging boars, falling trees
@@ -18,6 +19,8 @@ Every push to `main` builds a fresh APK automatically (Actions tab).
 - Survival: health, energy (fruit), water (bottles), first-aid kits
 - Power-ups: Shield, Magnet, Slow-mo, Double jump, each with an on-screen timer
 - Missions (+50 coins each), coin wallet, character unlock, saved progress
+- Textured dirt road, wind-swept grass, sky with sun, drifting clouds and stars, rippling river water
+- Footstep dust, landing dust, water splashes, rain splashes, fire sparks, coin sparkles
 - Day/night cycle, rain and thunderstorms, fireflies, breathing/heartbeat audio
 - Graphics High/Low setting for slower phones
 
@@ -40,7 +43,7 @@ Then in GitHub: **Settings → Secrets and variables → Actions → New reposit
 The next build will attach `WildSurvivor-1.0.N.aab` to the release. Upload that in Play Console.
 
 ## Before a public release
-- The two character models come from the three.js example set (Mixamo-sourced). Replace them with characters/animations you export from your own Mixamo account (free) before publishing.
+- Remy and his animations were exported from your Mixamo account. Ranger and Shadow come from the three.js example set (Mixamo-sourced); replace them with your own Mixamo exports before publishing.
 - Add a privacy policy page and store screenshots.
 - New personal Play Console accounts must run a closed test with 12 testers for 14 days before production.
 
