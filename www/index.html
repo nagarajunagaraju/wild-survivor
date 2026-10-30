@@ -994,7 +994,7 @@ function audioInit(){
 /* ---------- recorded sound bank (Pixabay, free licence) ---------- */
 const SND_BASE = window.WS_SND_BASE || 'sounds/';
 const SND = {}, LOOPS = {};
-const SND_LIST = ['forest', 'river', 'rain', 'breath', 'heart', 'run', 'fire', 'roar', 'tree', 'splash', 'coin', 'thunder'];
+const SND_LIST = ['music', 'forest', 'river', 'rain', 'breath', 'heart', 'run', 'fire', 'roar', 'tree', 'splash', 'coin', 'thunder'];
 function loadSounds(){
   if (!ac) return;
   SND_LIST.forEach(n => {
@@ -1028,7 +1028,8 @@ function audioUpdate(night){
     if (e.type === 'fire') fire = Math.max(fire, 1 - d / 45);
   }
   const wet = events.some(e => e.water && S.z < e.z0 && S.z > e.z0 - 12);
-  loopS('forest', (phase === 'menu' ? .45 : .32) * (1 - night * .55) * (1 - rainAmt * .5));
+  loopS('music', phase === 'menu' ? .5 : play ? .22 : phase === 'over' ? .4 : .1);
+  loopS('forest', (phase === 'menu' ? .3 : .32) * (1 - night * .55) * (1 - rainAmt * .5));
   loopS('rain', live ? rainAmt * .6 : 0);
   loopS('river', live ? Math.max(0, river) * .6 : 0);
   loopS('fire', live ? Math.max(0, fire) * .8 : 0);
