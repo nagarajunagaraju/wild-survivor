@@ -17,9 +17,11 @@ Every push to `main` builds a fresh APK automatically (Actions tab).
 - Crocodile that lunges and snaps when you pick its lane; bear that rears up out of the den roaring
 - Obstacles: boulders, stumps, logs, snakes, low branches, charging boars, falling trees
 - Fork decisions read from clues: river (crocodile / slippery rocks / logs), gorge (bridges), rock wall (bear den / thorns / daylight), rockslide (shadows), forest fire (flames / embers / stream)
-- Survival: health, energy (fruit), water (bottles), first-aid kits
-- Power-ups: Shield, Magnet, Slow-mo, Double jump, each with an on-screen timer
-- Cinematic look: bloom, filmic tone curve and colour grade, vignette, film grain, sun shafts through the canopy, dappled leaf shadows on the trail, letterboxed tiger intro (tap to skip), slow-motion close calls, side-camera tiger pounce on death, camera roll on lane changes, music that swells as the tiger closes in
+- Survival: health, energy, water; nine fruits (apple, banana, berries, mango, orange, grapes, watermelon, coconut, pineapple) with different energy/water values, water bottles, first-aid kits
+- Curved world: the trail visibly winds left/right and over hills (vertex bend), camera leans into curves
+- Power-ups with light beams, spawning often: Shield, Magnet, Slow-mo, Double jump, Sprint (super speed, smash through obstacles, tiger falls back), each with an on-screen timer
+- Coin trails in free lanes and coin arcs over jump obstacles; easier pickup
+- Cinematic look: bloom, filmic tone curve and colour grade, vignette, film grain, sun shafts through the canopy, dappled leaf shadows on the trail, letterboxed intro where the tiger leaps out of the bushes behind Remy and the camera swings round as he runs (tap to skip), slow-motion close calls, side-camera tiger pounce on death, camera roll on lane changes, music that swells as the tiger closes in
 - Premium UI: Bebas Neue / Barlow (bundled), glass HUD with icons
 - Modes: Endless, Daily (same seeded course for everyone each day, best saved), Hardcore (1.6x damage, one wrong fork ends the run, double coins)
 - 19 missions (+50 coins each), coin wallet, character unlock, saved progress
@@ -28,7 +30,7 @@ Every push to `main` builds a fresh APK automatically (Actions tab).
 - Sky with sun, drifting clouds and stars, rippling river water
 - Footstep dust, landing dust, water splashes, rain splashes, fire sparks, coin sparkles
 - Recorded sound: forest ambience, rain, thunder, river, fire, running footsteps synced to speed, breathing that gets heavier as energy drops, heartbeat as the tiger closes in, tiger roar, falling trees, splashes (credits in `www/sounds/CREDITS.txt`)
-- Day/night cycle, rain and thunderstorms, fireflies
+- Day/night cycle with moonlight and a head torch lighting the trail, rain and thunderstorms, fireflies
 - Graphics High/Low setting for slower phones
 
 Asset credits: `www/models/CREDITS.txt` and `www/sounds/CREDITS.txt`.

@@ -69,7 +69,7 @@ body{height:100%;margin:0;background:#0b1510;color:var(--ink);font-family:var(--
 .sheet.center{top:0;align-items:center;background:#06100b99}
 .card{width:min(440px,100%);box-sizing:border-box;background:linear-gradient(180deg,rgba(26,51,38,.92),rgba(8,18,13,.96));backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border-radius:22px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:9px;box-shadow:0 -10px 40px #0009,inset 0 0 0 1px #ffffff12;animation:up .35s cubic-bezier(.2,.9,.3,1.1);max-height:calc(100vh - 40px);overflow:auto}
 @keyframes up{from{transform:translateY(30px);opacity:0}}
-.logo{font-family:var(--display);font-size:54px;letter-spacing:.03em;line-height:1;margin:0;text-align:center;color:var(--ink);text-shadow:0 4px 0 #0007}
+.logo{font-family:var(--display);font-size:46px;letter-spacing:.03em;line-height:1;margin:0;text-align:center;color:var(--ink);text-shadow:0 4px 0 #0007}
 .logo span{background:linear-gradient(180deg,#ffd27a,#ff8a1f 55%,#d9500c);-webkit-background-clip:text;background-clip:text;color:transparent;filter:drop-shadow(0 0 14px #ff8a1f55)}
 .tag{margin:0;text-align:center;font-weight:900;font-size:12px;letter-spacing:.3em;color:var(--leaf)}
 .pickrow{display:flex;flex-direction:column;gap:6px}
@@ -115,6 +115,10 @@ button:focus-visible{outline:3px solid var(--leaf);outline-offset:2px}
 .missions li .mr{margin-left:auto;color:var(--amber);font-size:11px;font-weight:900}
 .lb2{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
 .go[disabled]{opacity:.5;cursor:not-allowed}
+#mute{display:none!important}
+.tr-r{display:flex;gap:6px}
+.mis-btn{display:flex;justify-content:space-between;align-items:center;border:none;border-radius:12px;background:var(--panel);color:var(--muted);font:800 13px var(--body);letter-spacing:.06em;text-transform:uppercase;padding:9px 12px;cursor:pointer;box-shadow:inset 0 0 0 1px #ffffff14}
+.mis-btn b{color:var(--amber)}
 .modes{display:flex;gap:6px}
 .mode{flex:1;border:none;border-radius:12px;padding:8px 4px;background:var(--panel);color:var(--ink);font:800 12px var(--body);cursor:pointer;box-shadow:inset 0 0 0 2px #ffffff14;display:flex;flex-direction:column;align-items:center;gap:2px}
 .mode small{font-weight:700;font-size:10px;color:var(--muted)}
@@ -153,17 +157,15 @@ button:focus-visible{outline:3px solid var(--leaf);outline-offset:2px}
 <div class="sheet" id="menu">
   <div class="card">
     <h1 class="logo">WILD <span>SURVIVOR</span></h1>
-    <p class="tag">RUN · THINK · DECIDE · SURVIVE</p>
-    <div class="toprow"><span class="wallet" id="wallet">0 coins</span><button class="small-btn" id="gfxBtn" type="button">Graphics: High</button></div>
+    <div class="toprow"><span class="wallet" id="wallet">0 coins</span><span class="tr-r"><button class="small-btn" id="mute3" type="button">Sound on</button><button class="small-btn" id="gfxBtn" type="button">Graphics: High</button></span></div>
     <div class="charsel"><button class="arrow" id="prevC" type="button" aria-label="Previous character">‹</button><div class="cinfo"><div class="cname" id="cName">Ranger</div><div class="cdesc" id="cDesc"></div><div class="clock" id="cLock" hidden></div></div><button class="arrow" id="nextC" type="button" aria-label="Next character">›</button></div>
     <div class="modes" id="modes"></div>
     <p class="best" id="loadLine">Loading survivors…</p>
     <div class="pickrow" id="rowOutfit" hidden><span class="lb">Outfit</span><div class="swatches" id="outfits"></div></div>
     <div class="pickrow skin" id="rowSkin" hidden><span class="lb">Skin</span><div class="swatches" id="skins"></div></div>
     <button class="go" id="play" type="button">RUN</button>
-    <span class="lb2">Missions · +50 coins each</span>
-    <ul class="missions" id="missions"></ul>
-    <p class="ctl">Swipe to dodge. Fruit = energy, bottles = water.<br>At every fork, read the clues and pick the safe path.</p>
+    <button class="mis-btn" id="misBtn" type="button" aria-expanded="false"><span id="misLbl">Missions</span><span aria-hidden="true">▾</span></button>
+    <ul class="missions" id="missions" hidden></ul>
     <p class="best" id="bestLine" hidden></p>
   </div>
 </div>
@@ -208,12 +210,22 @@ const renderer = new THREE.WebGLRenderer({canvas, antialias: true, powerPreferen
 renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
+/* Curved world: every vertex is pushed sideways/up by its squared distance from the camera,
+   so the straight trail reads as winding left/right and over hills (gameplay stays straight). */
+const BEND = {value: new THREE.Vector2(0, 0)};
+THREE.ShaderChunk.logdepthbuf_pars_vertex = 'uniform vec2 uBend;\n' + THREE.ShaderChunk.logdepthbuf_pars_vertex;
+THREE.ShaderChunk.project_vertex = THREE.ShaderChunk.project_vertex.replace('gl_Position = projectionMatrix * mvPosition;',
+  'float bendD = max(-mvPosition.z - 6.0, 0.0);\nmvPosition.x += uBend.x * bendD * bendD;\nmvPosition.y += uBend.y * bendD * bendD;\ngl_Position = projectionMatrix * mvPosition;');
+THREE.Material.prototype.onBeforeCompile = function (sh){ sh.uniforms.uBend = BEND; };
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(62, 1, 0.1, 230);
 const hemi = new THREE.HemisphereLight(0xdff0ff, 0x24361a, 0.9); scene.add(hemi);
 const sun = new THREE.DirectionalLight(0xfff2d8, 0.85); scene.add(sun); scene.add(sun.target);
 sun.castShadow = true; sun.shadow.mapSize.set(1024, 1024); Object.assign(sun.shadow.camera, {left: -9, right: 9, top: 9, bottom: -9, near: 1, far: 45}); sun.shadow.bias = -0.0015;
 const torch = new THREE.PointLight(0xffc477, 0, 20, 1.6); scene.add(torch);
+const moon = new THREE.DirectionalLight(0xa8bcff, 0); moon.position.set(8, 20, -10); scene.add(moon); scene.add(moon.target);
+const headlamp = new THREE.SpotLight(0xfff1d8, 0, 60, .52, .65, 1.1); scene.add(headlamp); scene.add(headlamp.target);
+const HEMI_DAY = new THREE.Color(0xdff0ff), HEMI_NIGHT = new THREE.Color(0x7088c4), HEMI_G_DAY = new THREE.Color(0x24361a), HEMI_G_NIGHT = new THREE.Color(0x1c2638);
 scene.fog = new THREE.Fog(0x9fd3c7, 28, 105);
 scene.background = new THREE.Color(0x9fd3c7);
 
@@ -285,9 +297,9 @@ const stripeTex = canvasTex(64, 64, (x) => {
 const warnTex = canvasTex(64, 64, (x) => { x.fillStyle = '#ff3b2f'; x.beginPath(); x.arc(32, 32, 28, 0, 7); x.fill(); x.fillStyle = '#fff'; x.font = 'bold 44px sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText('!', 32, 35); });
 
 /* ---------- ground ---------- */
-const path = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 260), new THREE.MeshStandardMaterial({map: pathTex, roughness: 1}));
+const path = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 260, 1, 130), new THREE.MeshStandardMaterial({map: pathTex, roughness: 1}));
 path.rotation.x = -PI / 2; path.receiveShadow = true; scene.add(path);
-const grass = new THREE.Mesh(new THREE.PlaneGeometry(120, 260), new THREE.MeshStandardMaterial({map: grassTex, roughness: 1}));
+const grass = new THREE.Mesh(new THREE.PlaneGeometry(120, 260, 16, 130), new THREE.MeshStandardMaterial({map: grassTex, roughness: 1}));
 grass.rotation.x = -PI / 2; grass.position.y = -.02; grass.receiveShadow = true; scene.add(grass);
 
 /* ---------- real textures (fall back to painted ones if missing) ---------- */
@@ -297,7 +309,7 @@ function loadTex(name, rep, cb){
   const url = (window.WS_TEX_URLS && window.WS_TEX_URLS[name]) || TEX_BASE + name;
   texLoader.load(url, t => { t.wrapS = t.wrapT = THREE.RepeatWrapping; if (rep) t.repeat.set(rep[0], rep[1]); t.anisotropy = 4; cb(t); }, undefined, () => {});
 }
-path.geometry.dispose(); path.geometry = new THREE.PlaneGeometry(8.6, 260);
+path.geometry.dispose(); path.geometry = new THREE.PlaneGeometry(8.6, 260, 2, 130);
 loadTex('trail.png', [1, 15], t => { Object.assign(path.material, {map: t, transparent: true, depthWrite: false}); path.renderOrder = -1; path.material.needsUpdate = true; path.userData.real = t; });
 loadTex('trail_n.jpg', [1, 15], t => { path.material.normalMap = t; path.material.normalScale.set(1.1, 1.1); path.material.needsUpdate = true; path.userData.realN = t; });
 loadTex('floor.jpg', [16, 34], t => { grass.material.map = t; grass.material.needsUpdate = true; grass.userData.real = t; });
@@ -355,7 +367,7 @@ const bladeMat = new THREE.MeshLambertMaterial({side: THREE.DoubleSide, alphaTes
 bladeMat.visible = false;
 loadTex('grasscard.png', null, t => { t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; bladeMat.map = t; bladeMat.visible = true; bladeMat.needsUpdate = true; });
 bladeMat.onBeforeCompile = sh => {
-  sh.uniforms.uTime = grassUni.uTime;
+  sh.uniforms.uTime = grassUni.uTime; sh.uniforms.uBend = BEND;
   sh.vertexShader = 'uniform float uTime;\n' + sh.vertexShader.replace('#include <begin_vertex>',
     `#include <begin_vertex>
      float ph = 0.0;
@@ -466,7 +478,7 @@ function loadTrees(){
         const leafy = m.material.alphaTest > 0 || m.material.transparent;
         if (leafy){
           m.material.alphaTest = .45; m.material.transparent = false; m.material.side = THREE.DoubleSide;
-          m.material.onBeforeCompile = sh => { sh.uniforms.uTime = treeUni.uTime; sh.vertexShader = 'uniform float uTime;\n' + sh.vertexShader.replace('#include <begin_vertex>',
+          m.material.onBeforeCompile = sh => { sh.uniforms.uTime = treeUni.uTime; sh.uniforms.uBend = BEND; sh.vertexShader = 'uniform float uTime;\n' + sh.vertexShader.replace('#include <begin_vertex>',
             `#include <begin_vertex>
              float ph2 = 0.0;
              #ifdef USE_INSTANCING
@@ -724,29 +736,42 @@ function addObs(type, lane, z){
   }
   g.position.set(x, 0, z); scene.add(g); obs.push(o);
 }
+const BEAM_GEO = new THREE.CylinderGeometry(.42, .42, 7, 16, 1, true); BEAM_GEO.translate(0, 3.5, 0);
+const BEAM_TEX = canvasTex(8, 128, (x, w, h) => { const g = x.createLinearGradient(0, h, 0, 0); g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, w, h); });
 function addItem(kind, lane, z){
   const g = new THREE.Group(); const it = {kind, lane, z, g, done: false};
   if (kind === 'coin'){ const c = mesh(G.coin, new THREE.MeshStandardMaterial({color: 0xffc83a, emissive: 0x6b4a00, roughness: .4, metalness: .6})); c.rotation.x = PI / 2; g.add(c); }
   else if (kind === 'apple'){ g.add(mesh(G.ball, 0xd8322e, .28, .26, .28)); g.add(at(bx(.04, .14, .04, 0x5a3a20), 0, .3, 0)); g.add(at(mesh(G.cone, 0x4caf3a, .1, .16, .05), .08, .34, 0)); }
+  else if (kind === 'mango'){ g.add(mesh(G.ball, 0xf5a623, .24, .3, .22)); g.add(at(mesh(G.ball, 0xe8572a, .14, .16, .1), .1, .06, -.12)); g.add(at(mesh(G.cone, 0x3f9a34, .12, .2, .04), .05, .34, 0)); }
+  else if (kind === 'orange'){ g.add(mesh(G.ball, 0xff8a1a, .25, .25, .25)); g.add(at(mesh(G.cone, 0x3f9a34, .1, .14, .04), .06, .28, 0)); }
+  else if (kind === 'grapes'){ for (let i = 0; i < 10; i++){ const r = 3 - Math.floor(i / 3.4); g.add(at(mesh(G.ball, i % 2 ? 0x6a2c9e : 0x7d3bb5, .1, .1, .1), (i % 3 - 1) * .12 + (r % 2) * .05, -i * .045, (Math.random() - .5) * .08)); } g.add(at(bx(.03, .14, .03, 0x5a3a20), 0, .14, 0)); g.add(at(mesh(G.cone, 0x3f9a34, .14, .12, .04), .1, .1, 0)); }
+  else if (kind === 'watermelon'){ const r = new THREE.Mesh(new THREE.CylinderGeometry(.36, .36, .1, 18, 1, false, 0, PI), mat(0x2f7a2e)); r.rotation.set(PI / 2, 0, PI / 2); g.add(r); const f = new THREE.Mesh(new THREE.CylinderGeometry(.31, .31, .11, 18, 1, false, 0, PI), mat(0xe8384f)); f.rotation.copy(r.rotation); g.add(f); for (let i = 0; i < 5; i++) g.add(at(mesh(G.ball, 0x1a1210, .02, .03, .02), Math.cos(i * .6 + .3) * .16, Math.sin(i * .6 + .3) * .16 - .02, -.06)); }
+  else if (kind === 'coconut'){ g.add(mesh(G.ball, 0x6b4a2b, .26, .27, .26)); [[-.07, .16], [.07, .16], [0, .08]].forEach(([x, y]) => g.add(at(mesh(G.ball, 0x2a1a10, .035, .035, .02), x, y, -.24))); }
+  else if (kind === 'pineapple'){ g.add(mesh(G.ball, 0xd9a628, .2, .29, .2)); for (let i = 0; i < 6; i++){ const c = at(mesh(G.cone, 0x3f8f34, .06, .3, .03), Math.cos(i) * .05, .36, Math.sin(i) * .05); c.rotation.set(Math.sin(i) * .4, 0, Math.cos(i) * .4); g.add(c); } }
   else if (kind === 'banana'){ const t = new THREE.Mesh(new THREE.TorusGeometry(.26, .08, 5, 10, 2.2), mat(0xf5d33a)); t.rotation.z = .6; g.add(t); }
   else if (kind === 'berries'){ [[-.1, 0], [.1, 0], [0, .15], [0, -.05]].forEach(([x, y]) => g.add(at(mesh(G.ball, 0x5a3fbf, .12, .12, .12), x, y, 0))); g.add(at(mesh(G.cone, 0x4caf3a, .14, .14, .06), 0, .28, 0)); }
   else if (kind === 'water'){ g.add(mesh(G.cyl, new THREE.MeshStandardMaterial({color: 0x59c6ff, transparent: true, opacity: .85, roughness: .2}), .16, .5, .16)); g.add(at(mesh(G.cyl, 0x1f5fa8, .09, .1, .09), 0, .3, 0)); g.add(at(mesh(G.cyl, 0xffffff, .165, .14, .165), 0, .02, 0)); }
   else if (kind.startsWith('p_')){
     const P = POWERS[kind.slice(2)];
-    g.add(new THREE.Mesh(new THREE.OctahedronGeometry(.36, 0), new THREE.MeshBasicMaterial({color: P.color})));
+    g.add(new THREE.Mesh(new THREE.OctahedronGeometry(.46, 0), new THREE.MeshBasicMaterial({color: P.color})));
+    const beam = new THREE.Mesh(BEAM_GEO, new THREE.MeshBasicMaterial({color: P.color, map: BEAM_TEX, transparent: true, opacity: .55, depthWrite: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide})); beam.position.y = -1; g.add(beam);
     const ring = new THREE.Mesh(new THREE.TorusGeometry(.55, .04, 6, 24), new THREE.MeshBasicMaterial({color: 0xffffff, transparent: true, opacity: .7})); ring.rotation.x = PI / 2; g.add(ring);
   }
   else if (kind === 'med'){ g.add(bx(.5, .38, .3, 0xf4f4f0)); g.add(at(new THREE.Mesh(G.box, glow(0xe0322a)), 0, 0, -.16)); g.children[1].scale.set(.3, .08, .02); g.add(at(new THREE.Mesh(G.box, glow(0xe0322a)), 0, 0, -.16)); g.children[2].scale.set(.08, .3, .02); }
   it.x = LANES[lane]; g.position.set(it.x, 1, z); scene.add(g); items.push(it);
 }
 function addCoins(lane, z, n){ for (let i = 0; i < n; i++) addItem('coin', lane, z - i * 1.6); }
-const FOODS = ['apple', 'banana', 'berries'];
+function addArc(lane, z, n){ for (let i = 0; i < n; i++){ addItem('coin', lane, z + 3.2 - i * 1.3); const it = items[items.length - 1]; it.y0 = 1 + Math.sin(i / (n - 1) * PI) * 1.6; it.g.position.y = it.y0; } }
+const FOODS = ['apple', 'banana', 'berries', 'mango', 'orange', 'grapes', 'watermelon', 'coconut', 'pineapple'];
+const FOOD_EN = {apple: 20, banana: 22, berries: 14, mango: 28, orange: 20, grapes: 18, watermelon: 18, coconut: 14, pineapple: 30};
+const FOOD_WA = {watermelon: 14, coconut: 24, orange: 6};
 const supply = () => gr() < .42 ? 'water' : gpick(FOODS);
 const POWERS = {
   shield: {name: 'Shield', info: 'Blocks the next hit', color: 0x6fe7ff, css: '#6fe7ff', dur: 14},
   magnet: {name: 'Magnet', info: 'Pulls in nearby coins', color: 0xffd23a, css: '#ffd23a', dur: 10},
   slow:   {name: 'Slow-mo', info: 'More time to react', color: 0xb98cff, css: '#b98cff', dur: 6},
-  dj:     {name: 'Double jump', info: 'Swipe up again in the air', color: 0x7bd389, css: '#7bd389', dur: 12}
+  dj:     {name: 'Double jump', info: 'Swipe up again in the air', color: 0x7bd389, css: '#7bd389', dur: 12},
+  sprint: {name: 'Sprint', info: 'Super speed, smash through, tiger falls back', color: 0xff5a36, css: '#ff5a36', dur: 5}
 };
 
 /* ----- decision events ----- */
@@ -964,7 +989,7 @@ const dappleTex = canvasTex(256, 256, (x, w, h) => {
     }
   }
 }, [1, 30]);
-const dapple = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 260), new THREE.MeshBasicMaterial({color: 0x10180a, alphaMap: dappleTex, transparent: true, opacity: .42, depthWrite: false}));
+const dapple = new THREE.Mesh(new THREE.PlaneGeometry(8.6, 260, 2, 130), new THREE.MeshBasicMaterial({color: 0x10180a, alphaMap: dappleTex, transparent: true, opacity: .42, depthWrite: false}));
 dapple.rotation.x = -PI / 2; dapple.position.y = .012; dapple.renderOrder = 0; scene.add(dapple);
 
 /* ================= game state ================= */
@@ -1006,11 +1031,11 @@ fillMissions();
 if (!profile.unlocked.includes('remy')) profile.unlocked.push('remy');
 if (!profile.v5){ profile.v5 = true; profile.char = 0; saveProfile(); }
 charIdx = Math.min(CHARS.length - 1, profile.char || 0);
-let tigerOff = 12, phase = 'menu', menuAngle = 0, elapsed = 0, shake = 0, toastT = 0, nightWas = false;
+let tigerOff = 12, tigerX = 0, phase = 'menu', menuAngle = 0, elapsed = 0, shake = 0, toastT = 0, nightWas = false;
 function freshState(){
   return {z: 0, x: 0, lane: 1, y: 0, vy: 0, slide: 0, speed: 11, t: 0, hp: 100, en: 100, gap: 60, coins: 0, dist: 0,
     inv: 0, stumble: 0, dec: 0, decGood: 0, spawnZ: -34, nextEventZ: -150, cause: '', runPhase: 0, lastStep: 0, roared: false, overT: 0, lastEventType: '',
-    wa: 100, pw: {shield: 0, magnet: 0, slow: 0, dj: 0}, djUsed: false, misDone: 0, misT: 0, lastHitDist: 0,
+    wa: 100, pw: {shield: 0, magnet: 0, slow: 0, dj: 0, sprint: 0}, djUsed: false, misDone: 0, misT: 0, lastHitDist: 0,
     st: {dist: 0, coins: 0, good: 0, pups: 0, water: 0, food: 0, time: 0, clean: 0, rain: 0, boar: 0, river: 0, med: 0, hard: 0, daily: 0, fire: 0}};
 }
 function clearWorld(){
@@ -1024,10 +1049,10 @@ function startRun(){
   S.mode = profile.mode || 'endless';
   gr = S.mode === 'daily' ? seeded(90210 + dayNo() * 7919) : Math.random;
   decor.forEach(d => placeDecor(d, 14 - Math.random() * 160));
-  phase = 'intro'; S.introT = 0; tigerOff = 4.6;
+  phase = 'intro'; S.introT = 0; tigerOff = 9; tigerX = -8;
   $('menu').hidden = true; $('over').hidden = true; $('pauseSheet').hidden = true; $('hud').hidden = true; muteBtn.hidden = true;
   cine(true); $('skipHint').hidden = false;
-  camera.position.set(S.x + 1.3, 1.1, S.z + tigerOff + 2.2);
+  camera.position.set(S.x + 1.5, 1.55, S.z - 3.6);
 }
 function cine(on){ document.body.classList.toggle('cine', on); }
 function beginChase(){
@@ -1056,12 +1081,14 @@ function spawnPattern(z){
   else if (r < .77){ addObs('stump', L, z); addObs('stump', (L + 1) % 3, z - 7); }
   else if (r < .89) addObs('boar', L, z - 10);
   else { addCoins(L, z + 4, 6); addItem(supply(), (L + 2) % 3, z - 3); }
+  if (!early && gr() < .62){ const free = [0, 1, 2].filter(l => !obs.some(o => !o.done && Math.abs(o.z - z) < 9 && (o.lane === l || o.lane < 0))); if (free.length) addCoins(gpick(free), z - 4, 6 + grnd(4)); }
+  if (gr() < .5){ const jo = obs.find(o => !o.done && Math.abs(o.z - z) < 1 && o.need === 'jump' && o.lane >= 0); if (jo) addArc(jo.lane, jo.z, 7); }
   if (S.mode !== 'hard' && gr() < .05) addItem('med', grnd(3), z - 9);
-  if (S.dist > 90 && gr() < .085) addItem('p_' + gpick(Object.keys(POWERS)), grnd(3), z - 11);
+  if (S.dist > 30 && gr() < .16) addItem('p_' + gpick(Object.keys(POWERS)), grnd(3), z - 11);
 }
 function inEventZone(z){ return events.some(e => z < e.z0 + 16 && z > e.z0 - 20); }
 
-let timeScale = 1, slowT = 0, nearCD = 0;
+let timeScale = 1, slowT = 0, nearCD = 0, bendTX = 0, bendTY = 0;
 function nearMiss(big, jump){
   if (nearCD > 0) return; nearCD = 2.5;
   slowT = big ? .7 : .45; S.coins += big ? 5 : 3;
@@ -1070,6 +1097,7 @@ function nearMiss(big, jump){
 }
 function hit(dmg, why){
   if (S.inv > 0) return;
+  if (S.pw.sprint > 0){ dust(10, true); shake = .35; sfx.crash(); buzz(30); S.coins += 2; toast('SMASH!', '+2 coins', 'good'); return; }
   if (S.pw.shield > 0){ S.pw.shield = 0; S.inv = .7; shake = .25; sfx.shield(); buzz(30); toast('Shield blocked it!', why.replace('!', ''), 'good'); return; }
   S.lastHitDist = S.dist; dust(8, true); S.hitT = .55; S.hitKind = /head|tree/i.test(why) ? 'hithead' : 'hit';
   if (S.mode === 'hard') dmg = Math.round(dmg * 1.6);
@@ -1117,7 +1145,7 @@ function act(a){
   else if (a === 'D'){ if (S.y > .01) S.vy = -18; S.slide = .75; sfx.slide(); buzz(10); }
 }
 let sx = 0, sy = 0, swiping = false, used = false;
-canvas.addEventListener('pointerdown', e => { if (phase === 'intro' && S.introT > .3) S.introT = 2.2; sx = e.clientX; sy = e.clientY; swiping = true; used = false; audioInit(); });
+canvas.addEventListener('pointerdown', e => { if (phase === 'intro' && S.introT > .3) S.introT = Math.max(S.introT, 2.75); sx = e.clientX; sy = e.clientY; swiping = true; used = false; audioInit(); });
 window.addEventListener('pointermove', e => {
   if (!swiping || used) return;
   const dx = e.clientX - sx, dy = e.clientY - sy;
@@ -1157,6 +1185,7 @@ function renderMenu(){
   const lk = $('cLock'); lk.hidden = owned; lk.textContent = owned ? '' : `Locked · ${c.cost} coins to unlock`;
   const pb = $('play'); pb.textContent = owned ? 'RUN' : `UNLOCK · ${c.cost}`; pb.disabled = !owned && profile.wallet < c.cost;
   $('wallet').textContent = profile.wallet + ' coins';
+  const md = profile.missions.filter(m => m.done).length; $('misLbl').innerHTML = `Missions <b>${md}/${profile.missions.length}</b> · +50 coins each`;
   $('missions').innerHTML = profile.missions.map(m => { const d = MISSION_POOL.find(p => p.id === m.id); return `<li class="${m.done ? 'done' : ''}"><span class="mk"></span>${d.text}<span class="mr">+50</span></li>`; }).join('');
   const g = 'Graphics: ' + (profile.lowGfx ? 'Low' : 'High'); $('gfxBtn').textContent = g; $('gfx2').textContent = g;
 }
@@ -1291,11 +1320,12 @@ const sfx = {
   bird: () => { const b = 2100 + Math.random() * 1400; tone(b, .1, 'sine', .022, 0, b * 1.4); tone(b * 1.1, .09, 'sine', .018, .14, b * .85); }
 };
 const muteBtn = $('mute');
-function syncMute(){ muteBtn.textContent = $('mute2').textContent = muted ? 'Sound off' : 'Sound on'; if (master) master.gain.value = muted ? 0 : .9; }
-muteBtn.onclick = $('mute2').onclick = () => { muted = !muted; try { localStorage.setItem('ws_muted', muted ? '1' : '0'); } catch (e) {} audioInit(); syncMute(); };
+$('misBtn').onclick = () => { const l = $('missions'), open = l.hidden; l.hidden = !open; $('misBtn').setAttribute('aria-expanded', open); };
+function syncMute(){ muteBtn.textContent = $('mute2').textContent = $('mute3').textContent = muted ? 'Sound off' : 'Sound on'; if (master) master.gain.value = muted ? 0 : .9; }
+muteBtn.onclick = $('mute2').onclick = $('mute3').onclick = () => { muted = !muted; try { localStorage.setItem('ws_muted', muted ? '1' : '0'); } catch (e) {} audioInit(); syncMute(); };
 
 /* ================= day / night ================= */
-const SKY = [[0, 0xa9c9b4], [.42, 0xb3cfb8], [.52, 0xe89a5c], [.6, 0x2a2848], [.66, 0x0e1828], [.86, 0x0e1828], [.93, 0xe6a98a], [1, 0xa9c9b4]];
+const SKY = [[0, 0xa9c9b4], [.42, 0xb3cfb8], [.52, 0xe89a5c], [.6, 0x34365a], [.66, 0x1b2a44], [.86, 0x1b2a44], [.93, 0xe6a98a], [1, 0xa9c9b4]];
 const cA = new THREE.Color(), cB = new THREE.Color(), skyC = new THREE.Color();
 function skyAt(p){
   for (let i = 0; i < SKY.length - 1; i++){ if (p >= SKY[i][0] && p <= SKY[i + 1][0]){ const k = (p - SKY[i][0]) / (SKY[i + 1][0] - SKY[i][0]); cA.setHex(SKY[i][1]); cB.setHex(SKY[i + 1][1]); return skyC.copy(cA).lerp(cB, k); } }
@@ -1305,7 +1335,7 @@ function nightAmt(p){ if (p < .5 || p > .97) return 0; if (p < .64) return (p - 
 
 /* ================= main loop ================= */
 const clock = new THREE.Clock();
-const camGoal = new THREE.Vector3();
+const camGoal = new THREE.Vector3(), camLook = new THREE.Vector3();
 let birdT = 2;
 function update(dt){
   elapsed += dt;
@@ -1320,9 +1350,10 @@ function update(dt){
   rainAmt += (rainTarget - rainAmt) * Math.min(1, dt * .35);
   const sky = skyAt(cyc); sky.lerp(grey.clone().multiplyScalar(1 - night * .8), rainAmt * .6);
   scene.background.copy(sky); scene.fog.color.copy(sky);
-  scene.fog.near = 34 - night * 14 - rainAmt * 14; scene.fog.far = 135 - night * 60 - rainAmt * 50;
+  scene.fog.near = 34 - night * 8 - rainAmt * 14; scene.fog.far = 135 - night * 25 - rainAmt * 50;
   lightning = Math.max(0, lightning - dt * 3);
-  hemi.intensity = .95 - night * .62 - rainAmt * .25 + lightning * 1.6; sun.intensity = Math.max(0, .85 - night * .72 - rainAmt * .5);
+  hemi.intensity = .95 - night * .38 - rainAmt * .25 + lightning * 1.6; hemi.color.copy(HEMI_DAY).lerp(HEMI_NIGHT, night); hemi.groundColor.copy(HEMI_G_DAY).lerp(HEMI_G_NIGHT, night);
+  moon.intensity = night * .6; moon.position.set(S.x + 8, 20, S.z - 10); moon.target.position.set(S.x, 0, S.z - 12); sun.intensity = Math.max(0, .85 - night * .72 - rainAmt * .5);
   path.material.color.setScalar(1 - rainAmt * .35);
   rainMat.opacity = rainAmt * .55;
   if (rainAmt > .02){
@@ -1332,7 +1363,8 @@ function update(dt){
   if (rainAmt > .7 && phase === 'play'){ thunderT -= dt; if (thunderT < 0){ thunderT = 7 + Math.random() * 10; lightning = 1; sfx.thunder(); } }
   setRainSound(phase === 'play' || phase === 'dying' ? rainAmt : 0);
   audioUpdate(night);
-  torch.intensity = night * 1.6; torch.position.set(S.x, 2.6, pz - 3);
+  torch.intensity = night * 1.1; torch.position.set(S.x, 2.6, pz - 3);
+  headlamp.intensity = night * 3.4; headlamp.position.set(S.x, 2.5, pz + .6); headlamp.target.position.set(S.x * .6, 0, pz - 20);
   ffMat.opacity = night * .9;
   if (phase === 'play'){
     if (night > .6 && !nightWas){ nightWas = true; toast('Night falls', 'Harder to see what’s ahead', 'info'); }
@@ -1352,7 +1384,7 @@ function update(dt){
   if (waterMat.normalMap){ waterMat.normalMap.offset.set(elapsed * .03, elapsed * .09); }
   updateParts(dt);
   obs.forEach(o => { if (o.segs) o.segs.forEach((s, i) => { s.position.x = Math.sin(elapsed * 6 + i * .9) * .28; }); });
-  items.forEach(it => { it.g.rotation.y += dt * 2.4; it.g.position.y = 1 + Math.sin(elapsed * 3 + it.z) * .12; });
+  items.forEach(it => { it.g.rotation.y += dt * 2.4; it.g.position.y = (it.y0 || 1) + Math.sin(elapsed * 3 + it.z) * .12; });
 
   if (phase === 'play'){
     S.t += dt;
@@ -1360,7 +1392,7 @@ function update(dt){
     S.speed = Math.min(26, 14 + S.t * .09);
     for (const k in S.pw) S.pw[k] = Math.max(0, S.pw[k] - dt);
     const slowK = S.pw.slow > 0 ? .55 : 1;
-    let v = S.speed * (lowEn ? .85 : 1) * (S.wa < 15 ? .9 : 1) * (S.stumble > 0 ? .6 : 1) * slowK;
+    let v = S.speed * (S.pw.sprint > 0 ? 1.55 : 1) * (lowEn ? .85 : 1) * (S.wa < 15 ? .9 : 1) * (S.stumble > 0 ? .6 : 1) * slowK;
     S.z -= v * dt; S.dist = -S.z;
     S.stumble = Math.max(0, S.stumble - dt); S.inv = Math.max(0, S.inv - dt);
     // resources
@@ -1369,7 +1401,7 @@ function update(dt){
     S.wa = Math.max(0, S.wa - dt * (.85 + (1 - night) * .2));
     if (S.wa <= 0){ S.hp -= dt * 4; if (S.hp <= 0) die('Dehydrated. Grab water bottles on the way.'); }
     if (S.y === 0) S.djUsed = false;
-    S.gap = Math.min(100, S.gap + dt * (lowEn ? -.6 : 1.7));
+    S.gap = Math.min(100, S.gap + dt * (S.pw.sprint > 0 ? 9 : lowEn ? -.6 : 1.7));
     if (S.gap <= 0){ S.gap = 0; die('The tiger caught up with you.'); }
     S.st.hard = S.mode === 'hard' ? S.dist : 0; S.st.daily = S.mode === 'daily' ? S.dist : 0;
     S.st.dist = S.dist; S.st.coins = S.coins; S.st.good = S.decGood; S.st.time = S.t; S.st.clean = S.dist - S.lastHitDist; if (rainAmt > .6) S.st.rain += dt;
@@ -1409,13 +1441,13 @@ function update(dt){
       if (it.done) continue;
       const dz = it.z - S.z;
       if (S.pw.magnet > 0 && it.kind === 'coin' && dz > -10 && dz < 1){ it.x += (S.x - it.x) * Math.min(1, dt * 10); it.g.position.x = it.x; it.z += (S.z - it.z) * Math.min(1, dt * 4); it.g.position.z = it.z; }
-      if (dz > -.8 && dz < .8 && Math.abs(it.x - S.x) < 1 && (S.y < 2.2 || it.kind === 'coin')){
+      if (dz > -1.05 && dz < 1.05 && Math.abs(it.x - S.x) < 1.25 && (it.kind === 'coin' ? Math.abs(S.y + 1 - (it.y0 || 1)) < 1.35 : S.y < 2.2)){
         it.done = true; scene.remove(it.g);
         if (it.kind === 'coin'){ S.coins++; sfx.coin(); if (!profile.lowGfx) sparkle(it.x, 1.1, S.z - .5, 0xffd23a); }
         else if (it.kind === 'water'){ S.wa = Math.min(100, S.wa + 32); S.st.water++; sfx.drink(); buzz(15); }
         else if (it.kind.startsWith('p_')){ const k = it.kind.slice(2), P = POWERS[k]; S.pw[k] = P.dur; S.st.pups++; sfx.power(); buzz([20, 30, 20]); toast(P.name, P.info, 'info'); }
         else if (it.kind === 'med'){ S.st.med++; S.hp = Math.min(100, S.hp + 30); sfx.med(); toast('First aid', '+30 health', 'good'); buzz(20); }
-        else { S.en = Math.min(100, S.en + 24); S.st.food++; sfx.eat(); buzz(15); }
+        else { S.en = Math.min(100, S.en + (FOOD_EN[it.kind] || 20)); S.wa = Math.min(100, S.wa + (FOOD_WA[it.kind] || 0)); S.st.food++; sfx.eat(); buzz(15); if (!profile.lowGfx) sparkle(it.x, 1.1, S.z - .5, 0x8dff7a); }
       }
     }
     // events
@@ -1460,8 +1492,9 @@ function update(dt){
     renderHud();
   } else if (phase === 'intro'){
     S.introT += dt;
-    if (S.introT > .35 && !S.introRoar){ S.introRoar = true; if (!playS('roar', 1, .85)) sfx.roar(); shake = .35; buzz(60); }
-    if (S.introT > 2.2) beginChase();
+    if (S.introT > 1.05 && !S.introRoar){ S.introRoar = true; if (!playS('roar', 1, .85)) sfx.roar(); noise(.5, 900, .25, 'lowpass', 0, 200); shake = .55; buzz([60, 30, 90]); }
+    if (S.introT > 1.95) S.z -= dt * 11 * Math.min(1, (S.introT - 1.95) / .5);
+    if (S.introT > 2.75) beginChase();
   } else if (phase === 'dying'){
     S.overT += dt;
     if (S.pounce){
@@ -1518,7 +1551,7 @@ function update(dt){
     body.visible = false;
     S.hitT = Math.max(0, (S.hitT || 0) - dt);
     let want = 'idle', once = false;
-    if (phase === 'play'){
+    if (phase === 'play' || (phase === 'intro' && S.introT > 1.95)){
       want = 'run';
       if (S.slide > 0 && hasAct('slide')){ want = 'slide'; once = true; }
       else if (S.y > .05 && hasAct('jump')){ want = 'jump'; once = true; }
@@ -1530,7 +1563,7 @@ function update(dt){
     if (curL){
       playAct(want, once, want === 'run' ? .2 : .12);
       const A = curL.acts, slowK2 = S.pw && S.pw.slow > 0 ? .55 : 1;
-      if (A.run) A.run.timeScale = S.speed / (curL.def.shared && shared.run ? 13 : 10.5) * (S.stumble > 0 ? .75 : 1) * slowK2;
+      if (A.run) A.run.timeScale = S.speed / (curL.def.shared && shared.run ? 13 : 10.5) * (S.stumble > 0 ? .75 : 1) * slowK2 * (S.pw && S.pw.sprint > 0 ? 1.45 : 1);
       if (A.jump) A.jump.timeScale = A.jump.getClip().duration / .8 * slowK2;
       if (A.slide) A.slide.timeScale = A.slide.getClip().duration / .85 * slowK2;
       if (A.hit) A.hit.timeScale = 1.4;
@@ -1551,14 +1584,15 @@ function update(dt){
   // tiger
   tiger.visible = phase !== 'menu';
   let tY = 0;
-  if (phase === 'intro') tigerOff += (4.4 - tigerOff) * Math.min(1, dt * 3);
+  if (phase === 'intro'){ const lp = Math.max(0, Math.min(1, (S.introT - 1.05) / .8)), le = lp * lp * (3 - 2 * lp); tigerX = -8 + (S.x + 8) * le; tigerOff = 9 - 3.2 * le; tY = Math.sin(lp * PI) * 1.7 * (lp < 1 ? 1 : 0); }
   else if (phase === 'dying' && S.pounce){ const pp = Math.min(1, S.overT / 1.05); tigerOff = S.pounceFrom + (-.4 - S.pounceFrom) * pp; tY = Math.sin(pp * PI) * 1.7; }
   else if (phase !== 'menu') tigerOff += ((1.4 + S.gap * .16) - tigerOff) * Math.min(1, dt * 3.5);
-  tiger.position.z = S.z + tigerOff; tiger.position.x += (S.x - tiger.position.x) * Math.min(1, dt * 3);
+  tiger.position.z = S.z + tigerOff; if (phase === 'intro') tiger.position.x = tigerX; else tiger.position.x += (S.x - tiger.position.x) * Math.min(1, dt * 3);
+  tiger.rotation.y = phase === 'intro' && S.introT < 1.85 ? Math.min(.9, Math.max(0, (1.85 - S.introT) * 1.2)) * -1 : 0;
   tiger.position.y = tY;
   if (crocMixer) crocMixer.update(dt);
   if (tigerModel){
-    tigerMixer.timeScale = phase === 'intro' ? .28 : phase === 'dying' ? .6 : Math.max(.7, S.speed / 14) * (S.pw && S.pw.slow > 0 ? .55 : 1);
+    tigerMixer.timeScale = phase === 'intro' ? (S.introT < 1.05 ? .12 : 1.1) : phase === 'dying' ? .6 : Math.max(.7, S.speed / 14) * (S.pw && S.pw.slow > 0 ? .55 : 1);
     tigerMixer.update(dt);
     tigerModel.rotation.x = phase === 'dying' && S.pounce ? (Math.min(1, S.overT / 1.05) < .5 ? -.45 : .35) : 0;
   }
@@ -1577,11 +1611,14 @@ function update(dt){
     camera.position.set(S.x + Math.sin(menuAngle) * 4.4, narrow ? 1.9 : 2.1, S.z - Math.cos(menuAngle) * 4.8);
     camera.lookAt(S.x, narrow ? -1.0 : .2, S.z);
   } else if (phase === 'intro'){
-    const k = Math.min(1, S.introT / 2.2), e = k * k * (3 - 2 * k);
-    camGoal.set(S.x + 1.3 - e * .9, 1.05 + e * .9, S.z + tigerOff + 2.2 - e * 1.2);
-    camera.position.lerp(camGoal, 1 - Math.pow(.02, dt));
-    if (shake > 0){ shake = Math.max(0, shake - dt); camera.position.x += (Math.random() - .5) * shake * .5; camera.position.y += (Math.random() - .5) * shake * .5; }
-    camera.lookAt(S.x, 1.25 + e * .2, S.z - e * 2);
+    const sw = Math.max(0, Math.min(1, (S.introT - 1.9) / .85)), se = sw * sw * (3 - 2 * sw);
+    const th = 2.75 + (.22 - 2.75) * se, R2 = 3.9 + se * .8;
+    camGoal.set(S.x + Math.sin(th) * R2, 1.55 + se * 1.15, S.z + Math.cos(th) * R2);
+    camera.position.lerp(camGoal, 1 - Math.pow(sw > 0 ? .002 : .05, dt));
+    if (shake > 0){ shake = Math.max(0, shake - dt); camera.position.x += (Math.random() - .5) * shake * .6; camera.position.y += (Math.random() - .5) * shake * .6; }
+    const lk = Math.max(0, Math.min(1, (S.introT - 1.0) / .5)) * (1 - se);
+    camLook.set(S.x + (tiger.position.x - S.x) * lk * .5, 1.3, S.z + (tiger.position.z - S.z) * lk * .45 - se * 7);
+    camera.lookAt(camLook);
   } else if (phase === 'dying' || phase === 'over'){
     camGoal.set(S.x + 3.4, 1.5, S.z + 1.6);
     camera.position.lerp(camGoal, 1 - Math.pow(.05, dt));
@@ -1595,14 +1632,19 @@ function update(dt){
     if (shake > 0){ shake = Math.max(0, shake - dt); camera.position.x += (Math.random() - .5) * shake; camera.position.y += (Math.random() - .5) * shake; }
     if (phase === 'play' && S.y === 0 && S.slide <= 0){ camera.position.y += Math.abs(Math.sin(S.runPhase)) * .07 - .035; camera.position.x += Math.sin(S.runPhase) * .03; }
     camera.lookAt(S.x * .55, 1.45, S.z - 8);
-    camera.rotateZ((LANES[S.lane] - S.x) * .022);
-    const fovT = baseFov + (phase === 'play' ? (S.speed - 14) * .55 : 0); if (Math.abs(camera.fov - fovT) > .05){ camera.fov += (fovT - camera.fov) * Math.min(1, dt * 2); camera.updateProjectionMatrix(); }
-    drawLines(phase === 'play' ? Math.max(0, (S.speed - 15) / 11) : 0);
+    camera.rotateZ((LANES[S.lane] - S.x) * .022 - BEND.value.x * 22);
+    const fovT = baseFov + (phase === 'play' ? (S.speed - 14) * .55 + (S.pw.sprint > 0 ? 14 : 0) : 0); if (Math.abs(camera.fov - fovT) > .05){ camera.fov += (fovT - camera.fov) * Math.min(1, dt * 2); camera.updateProjectionMatrix(); }
+    drawLines(phase === 'play' ? (S.pw.sprint > 0 ? 1.4 : Math.max(0, (S.speed - 15) / 11)) : 0);
   }
   const dang = phase === 'play' ? Math.max(0, (40 - S.gap) / 40) : 0;
   $('vignette').style.opacity = composer && !profile.lowGfx ? dang * .35 : dang * .9;
-  if (gradePass){ gradePass.uniforms.time.value = elapsed % 10; gradePass.uniforms.danger.value = dang; gradePass.uniforms.warm.value = .5 * (1 - night); }
+  if (gradePass){ gradePass.uniforms.time.value = elapsed % 10; gradePass.uniforms.danger.value = dang; gradePass.uniforms.warm.value = .5 * (1 - night); gradePass.uniforms.exposure.value = 1 + night * .4; }
   nearCD = Math.max(0, nearCD - dt);
+  const bendOn = phase === 'menu' ? 0 : 1, bd = S.dist;
+  bendTX = (Math.sin(bd * .0043 + .6) * .0017 + Math.sin(bd * .0011) * .0007) * bendOn;
+  bendTY = (Math.sin(bd * .0029 + 2.1) * .0008 - .0001) * bendOn;
+  BEND.value.x += (bendTX - BEND.value.x) * Math.min(1, dt * 1.5);
+  BEND.value.y += (bendTY - BEND.value.y) * Math.min(1, dt * 1.5);
 }
 
 function checkMissions(){
@@ -1646,6 +1688,7 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
+window.__ws = {get S(){ return S; }, BEND, camera, scene, path, grass, get phase(){ return phase; }};
 S = freshState(); resize(); renderPickers(); renderBest(); syncMute(); loadChars(); loadTiger(); loadCroc(); loadTrees(); setupComposer(); applyGfx(); renderMenu();
 loop();
 })();
