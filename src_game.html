@@ -47,10 +47,10 @@ body{height:100%;margin:0;background:#0b1510;color:var(--ink);font-family:var(--
 .combo i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffe066,#ff8a1f);transition:width .15s}
 .pop{animation:pop .35s cubic-bezier(.3,1.6,.5,1)}
 @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
-.cicon{width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff6c2,#ffd23f 45%,#e8a10e 85%,#b06a00);box-shadow:inset 0 0 0 2px #c98208}
+.cicon{width:22px;height:20px;clip-path:polygon(22% 0,78% 0,100% 32%,50% 100%,0 32%);background:linear-gradient(160deg,#e9fdff 0%,#7deeff 35%,#22b6e6 65%,#0a6f9e 100%)}
 .dist{font-family:var(--display);font-size:18px;line-height:1;letter-spacing:.04em;color:#fffc;font-variant-numeric:tabular-nums;text-shadow:0 1px 3px #000a}
 .dist small{font-size:13px;margin-left:2px}
-.coins{font-family:var(--display);font-size:26px;letter-spacing:.04em;color:#ffd23f;display:flex;align-items:center;justify-content:flex-end;gap:6px;background:var(--glass);border-radius:12px;padding:2px 10px 0 6px;box-shadow:inset 0 0 0 1px var(--edge);font-variant-numeric:tabular-nums}
+.coins{font-family:var(--display);font-size:26px;letter-spacing:.04em;color:#8eefff;display:flex;align-items:center;justify-content:flex-end;gap:6px;background:var(--glass);border-radius:12px;padding:2px 10px 0 6px;box-shadow:inset 0 0 0 1px var(--edge);font-variant-numeric:tabular-nums}
 .pause{pointer-events:auto;background:var(--glass);box-shadow:inset 0 0 0 1px var(--edge);color:var(--ink);border:none;border-radius:12px;width:40px;height:40px;font:900 15px var(--body);cursor:pointer}
 .tiger{display:flex;align-items:center;gap:8px;background:var(--glass);box-shadow:inset 0 0 0 1px var(--edge);padding:4px 10px;border-radius:99px;font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--tiger)}
 .tiger .track{width:120px}
@@ -158,7 +158,7 @@ button:focus-visible{outline:3px solid var(--leaf);outline-offset:2px}
 <div class="sheet" id="menu">
   <div class="card">
     <h1 class="logo">WILD <span>SURVIVOR</span></h1>
-    <div class="toprow"><span class="wallet" id="wallet">0 coins</span><span class="tr-r"><button class="small-btn" id="mute3" type="button">Sound on</button><button class="small-btn" id="gfxBtn" type="button">Graphics: High</button></span></div>
+    <div class="toprow"><span class="wallet" id="wallet">0 diamonds</span><span class="tr-r"><button class="small-btn" id="mute3" type="button">Sound on</button><button class="small-btn" id="gfxBtn" type="button">Graphics: High</button></span></div>
     <div class="charsel"><button class="arrow" id="prevC" type="button" aria-label="Previous character">‹</button><div class="cinfo"><div class="cname" id="cName">Ranger</div><div class="cdesc" id="cDesc"></div><div class="clock" id="cLock" hidden></div></div><button class="arrow" id="nextC" type="button" aria-label="Next character">›</button></div>
     <div class="modes" id="modes"></div>
     <p class="best" id="loadLine">Loading survivors…</p>
@@ -180,7 +180,7 @@ button:focus-visible{outline:3px solid var(--leaf);outline-offset:2px}
     <dl class="grid">
       <div><dt>Distance</dt><dd id="oDist">0 m</dd></div>
       <div><dt>Score</dt><dd id="oTime">0</dd></div>
-      <div><dt>Coins</dt><dd id="oCoins">0</dd></div>
+      <div><dt>Diamonds</dt><dd id="oCoins">0</dd></div>
       <div><dt>Good calls</dt><dd id="oDec">0/0</dd></div>
     </dl>
     <p class="best" id="oBest"></p>
@@ -850,9 +850,12 @@ const COIN_TEX = canvasTex(256, 256, (x, w, h) => {
 const COIN_FACE = new THREE.MeshStandardMaterial({map: COIN_TEX, emissive: 0xffb000, emissiveMap: COIN_TEX, emissiveIntensity: .22, metalness: .35, roughness: .32});
 const COIN_RIM = new THREE.MeshStandardMaterial({color: 0xf0a818, emissive: 0x7a4a00, metalness: .5, roughness: .3});
 const COIN_MATS = [COIN_RIM, COIN_FACE, COIN_FACE];
+/* Diamond: brilliant-cut lathe (table, crown, girdle, pavilion) with flat facets that flash as it spins. */
+const GEM_GEO = (() => { const g = new THREE.LatheGeometry([new THREE.Vector2(0, -.4), new THREE.Vector2(.37, .02), new THREE.Vector2(.37, .06), new THREE.Vector2(.24, .17), new THREE.Vector2(0, .17)], 8).toNonIndexed(); g.computeVertexNormals(); return g; })();
+const GEM_MAT = new THREE.MeshStandardMaterial({color: 0x7deeff, emissive: 0x0a7fb0, emissiveIntensity: .55, metalness: .25, roughness: .06, flatShading: true});
 function addItem(kind, lane, z){
   const g = new THREE.Group(); const it = {kind, lane, z, g, done: false};
-  if (kind === 'coin'){ const c = new THREE.Mesh(G.coin, COIN_MATS); c.rotation.x = PI / 2; g.add(c); }
+  if (kind === 'coin'){ const c = new THREE.Mesh(GEM_GEO, GEM_MAT); c.rotation.z = .18; g.add(c); }
   else if (kind === 'apple'){ g.add(mesh(G.ball, 0xd8322e, .28, .26, .28)); g.add(at(bx(.04, .14, .04, 0x5a3a20), 0, .3, 0)); g.add(at(mesh(G.cone, 0x4caf3a, .1, .16, .05), .08, .34, 0)); }
   else if (kind === 'mango'){ g.add(mesh(G.ball, 0xf5a623, .24, .3, .22)); g.add(at(mesh(G.ball, 0xe8572a, .14, .16, .1), .1, .06, -.12)); g.add(at(mesh(G.cone, 0x3f9a34, .12, .2, .04), .05, .34, 0)); }
   else if (kind === 'orange'){ g.add(mesh(G.ball, 0xff8a1a, .25, .25, .25)); g.add(at(mesh(G.cone, 0x3f9a34, .1, .14, .04), .06, .28, 0)); }
@@ -884,11 +887,11 @@ const FOOD_WA = {watermelon: 14, coconut: 24, orange: 6};
 const supply = () => gr() < .3 ? 'water' : gpick(FOODS);
 const POWERS = {
   shield: {name: 'Shield', info: 'Blocks the next hit', color: 0x6fe7ff, css: '#6fe7ff', dur: 14},
-  magnet: {name: 'Magnet', info: 'Pulls in nearby coins', color: 0xffd23a, css: '#ffd23a', dur: 10},
+  magnet: {name: 'Magnet', info: 'Pulls in nearby diamonds', color: 0xffd23a, css: '#ffd23a', dur: 10},
   slow:   {name: 'Slow-mo', info: 'More time to react', color: 0xb98cff, css: '#b98cff', dur: 6},
   dj:     {name: 'Double jump', info: 'Swipe up again in the air', color: 0x7bd389, css: '#7bd389', dur: 12},
   sprint: {name: 'Sprint', info: 'Super speed, smash through, tiger falls back', color: 0xff5a36, css: '#ff5a36', dur: 5},
-  glide:  {name: 'Glider', info: 'Fly over the jungle and grab the sky coins', color: 0x6fd3ff, css: '#6fd3ff', dur: 6.5}
+  glide:  {name: 'Glider', info: 'Fly over the jungle and grab the sky diamonds', color: 0x6fd3ff, css: '#6fd3ff', dur: 6.5}
 };
 
 /* ----- decision events ----- */
@@ -1116,8 +1119,8 @@ const MISSION_POOL = [
   {id: 'd500', text: 'Run 500 m in one run', stat: 'dist', n: 500},
   {id: 'd1200', text: 'Run 1,200 m in one run', stat: 'dist', n: 1200},
   {id: 'd2500', text: 'Run 2,500 m in one run', stat: 'dist', n: 2500},
-  {id: 'c40', text: 'Collect 150 coins in a run', stat: 'coins', n: 150},
-  {id: 'c100', text: 'Collect 400 coins in a run', stat: 'coins', n: 400},
+  {id: 'c40', text: 'Collect 150 diamonds in a run', stat: 'coins', n: 150},
+  {id: 'c100', text: 'Collect 400 diamonds in a run', stat: 'coins', n: 400},
   {id: 'g3', text: 'Make 3 good calls at forks', stat: 'good', n: 3},
   {id: 'g6', text: 'Make 6 good calls at forks', stat: 'good', n: 6},
   {id: 'p2', text: 'Grab 2 power-ups', stat: 'pups', n: 2},
@@ -1212,7 +1215,7 @@ function spawnPattern(z){
    and sometimes a second line or fruit sits in another lane so there is always more to chase. */
 function fillGap(z, len){
   const z0 = z + 1.5; let z1 = z - len + 2.5;
-  for (const e of events) if (e.z0 + 18 < z0 && e.z0 + 18 > z1) z1 = e.z0 + 18;   // stop before a fork so coins never lead into a danger lane
+  for (const e of events) if (e.z0 + 18 < z0 && e.z0 + 18 > z1) z1 = e.z0 + 18;   // stop before a fork so diamonds never lead into a danger lane
   const inWin = o => !o.done && o.z <= z0 + 1 && o.z >= z1 - 1;
   const blocked = l => obs.some(o => inWin(o) && o.lane === l && o.need === 'avoid') || obs.some(o => (o.type === 'boar' || o.type === 'roller') && !o.done && o.lane === l && o.z > z1 - 16);
   const lanes = [0, 1, 2].filter(l => !blocked(l));
@@ -1235,10 +1238,14 @@ function fillGap(z, len){
       if (it.y0) it.g.position.y = it.y0;
     }
   };
-  line(lane, z0, z1, gr() < .4);
-  const others = lanes.filter(l => l !== lane);
-  if (others.length && gr() < .38){ const l2 = gpick(others), mid = (z0 + z1) / 2; line(l2, mid + 4, z1, gr() < .5); }
-  else if (others.length && gr() < .6) addItem(supply(), gpick(others), (z0 + z1) / 2);
+  const others = lanes.filter(l => l !== lane), mid = (z0 + z1) / 2;
+  if (others.length && gr() < .45){
+    const adj = others.filter(l => Math.abs(l - lane) === 1), l2 = adj.length ? gpick(adj) : gpick(others);
+    line(lane, z0, mid + 1.2, gr() < .4); line(l2, mid - 1.4, z1, gr() < .5); S.coinLane = l2;
+  } else {
+    line(lane, z0, z1, gr() < .4);
+    if (others.length && gr() < .6) addItem(supply(), gpick(others), mid);
+  }
 }
 function inEventZone(z){ return events.some(e => z < e.z0 + 16 && z > e.z0 - 20); }
 
@@ -1246,7 +1253,7 @@ let timeScale = 1, slowT = 0, nearCD = 0, bendTX = 0, bendTY = 0;
 function nearMiss(big, jump){
   if (nearCD > 0) return; nearCD = 2.5;
   slowT = big ? .7 : .45; S.coins += big ? 5 : 3; addCombo(big ? 10 : 8); S.score += (big ? 250 : 150) * S.mult;
-  toast(jump ? 'CLOSE ONE!' : big ? 'WHOA! CLOSE CALL' : 'CLOSE CALL!', `+${big ? 5 : 3} coins`, 'good');
+  toast(jump ? 'CLOSE ONE!' : big ? 'WHOA! CLOSE CALL' : 'CLOSE CALL!', `+${big ? 5 : 3} diamonds`, 'good');
   noise(.5, 3000, .12, 'bandpass', 0, 400); buzz(25);
 }
 /* ---- combo multiplier + tiger surge ---- */
@@ -1264,12 +1271,12 @@ function startSurge(){
 function escapeSurge(){
   S.surge = null; S.surgeT = 32 + gr() * 14; S.gap = Math.min(100, S.gap + 35);
   S.coins += 15; S.score += 1000 * S.mult; addCombo(15); slowT = .5;
-  toast('ESCAPED!', '+15 coins · tiger falls back', 'good'); sfx.good(); buzz([20, 30, 20]);
+  toast('ESCAPED!', '+15 diamonds · tiger falls back', 'good'); sfx.good(); buzz([20, 30, 20]);
 }
 function bump(id){ const el = $(id); if (!el) return; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
 function hit(dmg, why){
   if (S.inv > 0) return;
-  if (S.pw.sprint > 0){ dust(10, true); shake = .35; sfx.crash(); buzz(30); S.coins += 2; addCombo(3); toast('SMASH!', '+2 coins', 'good'); return; }
+  if (S.pw.sprint > 0){ dust(10, true); shake = .35; sfx.crash(); buzz(30); S.coins += 2; addCombo(3); toast('SMASH!', '+2 diamonds', 'good'); return; }
   if (S.pw.shield > 0){ S.pw.shield = 0; S.inv = .7; shake = .25; sfx.shield(); buzz(30); toast('Shield blocked it!', why.replace('!', ''), 'good'); return; }
   S.lastHitDist = S.dist; dust(8, true); S.hitStamp = (S.hitStamp || 0) + 1; if (S.combo > 0){ S.combo = 0; setMult(); } S.hitT = .55; S.hitKind = /head|tree/i.test(why) ? 'hithead' : 'hit';
   if (S.mode === 'hard') dmg = Math.round(dmg * 1.6);
@@ -1303,7 +1310,7 @@ function finish(){
   $('oCoins').textContent = S.coins;
   $('oDec').textContent = `${S.decGood}/${S.dec}`;
   $('oBest').textContent = newHigh ? 'NEW HIGH SCORE!' : `High score: ${(best.score || 0).toLocaleString('en-US')} · best ${best.dist} m`;
-  $('oMis').textContent = (S.misDone ? `${S.misDone} mission${S.misDone > 1 ? 's' : ''} complete · ` : '') + `Wallet: ${profile.wallet} coins`;
+  $('oMis').textContent = (S.misDone ? `${S.misDone} mission${S.misDone > 1 ? 's' : ''} complete · ` : '') + `Wallet: ${profile.wallet} diamonds`;
   $('over').hidden = false;
 }
 
@@ -1356,16 +1363,16 @@ function renderMenu(){
   renderModes();
   const c = CHARS[charIdx], owned = profile.unlocked.includes(c.id);
   $('cName').textContent = c.name; $('cDesc').textContent = c.desc;
-  const lk = $('cLock'); lk.hidden = owned; lk.textContent = owned ? '' : `Locked · ${c.cost} coins to unlock`;
+  const lk = $('cLock'); lk.hidden = owned; lk.textContent = owned ? '' : `Locked · ${c.cost} diamonds to unlock`;
   const pb = $('play'); pb.textContent = owned ? 'RUN' : `UNLOCK · ${c.cost}`; pb.disabled = !owned && profile.wallet < c.cost;
-  $('wallet').textContent = profile.wallet + ' coins';
-  const md = profile.missions.filter(m => m.done).length; $('misLbl').innerHTML = `Missions <b>${md}/${profile.missions.length}</b> · +50 coins each`;
+  $('wallet').textContent = profile.wallet + ' diamonds';
+  const md = profile.missions.filter(m => m.done).length; $('misLbl').innerHTML = `Missions <b>${md}/${profile.missions.length}</b> · +50 diamonds each`;
   $('missions').innerHTML = profile.missions.map(m => { const d = MISSION_POOL.find(p => p.id === m.id); return `<li class="${m.done ? 'done' : ''}"><span class="mk"></span>${d.text}<span class="mr">+50</span></li>`; }).join('');
   const g = 'Graphics: ' + (profile.lowGfx ? 'Low' : 'High'); $('gfxBtn').textContent = g; $('gfx2').textContent = g;
 }
 function tryUnlock(){
   const c = CHARS[charIdx];
-  if (profile.wallet < c.cost){ toast('Not enough coins', `Need ${c.cost - profile.wallet} more`, 'mid'); return; }
+  if (profile.wallet < c.cost){ toast('Not enough diamonds', `Need ${c.cost - profile.wallet} more`, 'mid'); return; }
   profile.wallet -= c.cost; profile.unlocked.push(c.id); saveProfile(); sfx.med(); toast(c.name + ' unlocked!', '', 'good'); renderMenu();
 }
 function cycleChar(d){ charIdx = (charIdx + d + CHARS.length) % CHARS.length; profile.char = charIdx; saveProfile(); setHero(charIdx); renderMenu(); sfx.lane(); }
@@ -1632,7 +1639,7 @@ function update(dt){
       if (S.pw.magnet > 0 && it.kind === 'coin' && dz > -10 && dz < 1){ it.x += (S.x - it.x) * Math.min(1, dt * 10); it.g.position.x = it.x; it.z += (S.z - it.z) * Math.min(1, dt * 4); it.g.position.z = it.z; }
       if (dz > -1.05 && dz < 1.05 && Math.abs(it.x - S.x) < 1.25 && (it.kind === 'coin' ? Math.abs(S.y + 1 - (it.y0 || 1)) < 1.35 : it.y0 > 3 ? S.y > 3 : S.y < 2.2)){
         it.done = true; scene.remove(it.g);
-        if (it.kind === 'coin'){ S.coins++; S.score += 10 * S.mult; addCombo(1); if (S.coins % 5 === 0) bump('coinBox'); sfx.coin(); if (!profile.lowGfx) sparkle(it.x, 1.1, S.z - .5, 0xffd23a); }
+        if (it.kind === 'coin'){ S.coins++; S.score += 10 * S.mult; addCombo(1); if (S.coins % 5 === 0) bump('coinBox'); sfx.coin(); if (!profile.lowGfx) sparkle(it.x, 1.1, S.z - .5, 0x9ff3ff); }
         else if (it.kind === 'water'){ S.wa = Math.min(100, S.wa + 32); S.st.water++; sfx.drink(); buzz(15); }
         else if (it.kind.startsWith('p_')){ const k = it.kind.slice(2), P = POWERS[k]; S.pw[k] = P.dur; if (k === 'glide') skyCoins(); S.st.pups++; sfx.power(); buzz([20, 30, 20]); toast(P.name, P.info, 'info'); }
         else if (it.kind === 'med'){ S.st.med++; S.hp = Math.min(100, S.hp + 30); sfx.med(); toast('First aid', '+30 health', 'good'); buzz(20); }
@@ -1651,7 +1658,7 @@ function update(dt){
         if (role !== 'safe') S.lastHitDist = S.dist;
         if (role === 'safe' && ev.type === 'river') S.st.river++;
         if (role === 'safe' && ev.type === 'fire') S.st.fire++;
-        if (role === 'safe'){ S.score += 500 * S.mult; S.decGood++; S.gap = Math.min(100, S.gap + 12); S.coins += 5; toast(E.good, '+5 coins · tiger falls back', 'good'); sfx.good(); buzz(20); }
+        if (role === 'safe'){ S.score += 500 * S.mult; S.decGood++; S.gap = Math.min(100, S.gap + 12); S.coins += 5; toast(E.good, '+5 diamonds · tiger falls back', 'good'); sfx.good(); buzz(20); }
         else if (role === 'partial'){ S.hp -= 12; S.gap -= 8; shake = .3; flash(); toast(E.mid, '−12 health', 'mid'); sfx.mid(); buzz(50); if (S.hp <= 0) die('Bad call at the ' + E.title.toLowerCase() + '.'); }
         else if (S.mode === 'hard'){ S.hp = 0; shake = .8; flash(); toast(E.bad, 'Hardcore: no second chances', 'bad'); sfx.bad(); buzz([80, 40, 120]); die(E.bad.replace('!', '') + '. Hardcore run over.'); }
         else if (S.pw.shield > 0){ S.pw.shield = 0; S.hp -= 12; S.gap -= 8; shake = .4; flash(); toast('Shield took the worst', E.bad.replace('!', '') + ' · −12 health', 'mid'); sfx.shield(); buzz(50); if (S.hp <= 0) die(E.bad.replace('!', '') + '. Wrong path.'); }
@@ -1852,7 +1859,7 @@ function checkMissions(){
   for (const m of profile.missions){
     if (m.done) continue;
     const d = MISSION_POOL.find(p => p.id === m.id);
-    if (d && S.st[d.stat] >= d.n){ m.done = true; changed = true; S.misDone++; profile.wallet += 50; profile.misTotal = (profile.misTotal || 0) + 1; if (profile.misTotal % 3 === 0){ S.mult++; toast('Score multiplier up!', 'x' + scoreMult() + ' from now on', 'good'); } sfx.good(); toast('Mission complete', d.text + ' · +50 coins', 'good'); }
+    if (d && S.st[d.stat] >= d.n){ m.done = true; changed = true; S.misDone++; profile.wallet += 50; profile.misTotal = (profile.misTotal || 0) + 1; if (profile.misTotal % 3 === 0){ S.mult++; toast('Score multiplier up!', 'x' + scoreMult() + ' from now on', 'good'); } sfx.good(); toast('Mission complete', d.text + ' · +50 diamonds', 'good'); }
   }
   if (changed) saveProfile();
 }
