@@ -1,0 +1,10 @@
+remy.glb, anim_*.glb  - Mixamo (Adobe), exported from the owner's Mixamo account
+tiger.glb             - Sketchfab "running tiger" (check licence and author on its Sketchfab page before release)
+croc.glb              - Sketchfab "nile crocodile swimming" (check licence and author on its Sketchfab page before release)
+tree.glb + textures/frond.png, textures/grasscard.png, textures/bark.jpg
+                      - Babylon.js Assets (github.com/BabylonJS/Assets): meshes/Trees broadleaf tree and
+                        UnderWaterScene grass card, CC BY 4.0. Converted and recoloured.
+
+
+Poly Haven (polyhaven.com), CC0: island_tree_02, tree_small_02, searsia_lucida, shrub_01, periwinkle_plant,
+celandine_01, dandelion_01, boulder_01, namaqualand_boulder_02, rock_moss_set_01 (reduced for mobile).

@@ -3,6 +3,7 @@ name: Build Android
 on:
   push:
     branches: [main]
+    paths-ignore: ['godot/**', '.github/workflows/godot-android.yml']
   workflow_dispatch:
 
 permissions:
