@@ -43,6 +43,10 @@ body{height:100%;margin:0;background:#0b1510;color:var(--ink);font-family:var(--
 .scoreRow{display:flex;align-items:center;gap:6px;background:var(--glass);border-radius:12px;padding:2px 10px 0 4px;box-shadow:inset 0 0 0 1px var(--edge)}
 .score{font-family:var(--display);font-size:34px;line-height:1.05;letter-spacing:.04em;font-variant-numeric:tabular-nums;color:#fff;text-shadow:0 2px 0 #0008}
 .mult{font-family:var(--display);font-size:20px;line-height:1;color:#2a1205;background:linear-gradient(180deg,#ffe066,#ffb000);border-radius:8px;padding:4px 6px 2px}
+.combo{width:120px;height:4px;border-radius:2px;background:#ffffff22;overflow:hidden}
+.combo i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffe066,#ff8a1f);transition:width .15s}
+.pop{animation:pop .35s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.35)}100%{transform:scale(1)}}
 .cicon{width:20px;height:20px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff6c2,#ffd23f 45%,#e8a10e 85%,#b06a00);box-shadow:inset 0 0 0 2px #c98208}
 .dist{font-family:var(--display);font-size:18px;line-height:1;letter-spacing:.04em;color:#fffc;font-variant-numeric:tabular-nums;text-shadow:0 1px 3px #000a}
 .dist small{font-size:13px;margin-left:2px}
@@ -141,7 +145,7 @@ button:focus-visible{outline:3px solid var(--leaf);outline-offset:2px}
       <div class="bar en" id="enBar"><span class="lbl" title="Energy"><svg viewBox="0 0 24 24" fill="#ffb02e" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg></span><div class="track"><i id="enFill"></i></div></div>
       <div class="bar wa" id="waBar"><span class="lbl" title="Water"><svg viewBox="0 0 24 24" fill="#4cc3ff" aria-hidden="true"><path d="M12 2s-6.5 7.6-6.5 12.1A6.5 6.5 0 0 0 12 20.6a6.5 6.5 0 0 0 6.5-6.5C18.5 9.6 12 2 12 2z"/></svg></span><div class="track"><i id="waFill"></i></div></div>
     </div></div>
-    <div class="stats"><div class="scoreRow"><span class="mult" id="mult">x1</span><span class="score" id="score">0</span></div><div class="coins"><i class="cicon" aria-hidden="true"></i><span id="coins">0</span></div><div class="dist" id="dist">0<small>m</small></div></div>
+    <div class="stats"><div class="scoreRow"><span class="mult" id="mult">x1</span><span class="score" id="score">0</span></div><div class="combo"><i id="comboFill"></i></div><div class="coins" id="coinBox"><i class="cicon" aria-hidden="true"></i><span id="coins">0</span></div><div class="dist" id="dist">0<small>m</small></div></div>
   </div>
   <div class="tiger" id="tigerWrap"><span>Tiger</span><div class="track"><i id="tgFill"></i></div></div>
   <div class="powers" id="powers"></div>
@@ -614,6 +618,11 @@ function loadChars(){
     }, undefined, () => { if (++loadCount === CHARS.length) $('loadLine').hidden = true; });
   });
 }
+const glider = new THREE.Group();
+{ const wg = new THREE.PlaneGeometry(3.4, 1.3, 8, 1), pa = wg.attributes.position; for (let i = 0; i < pa.count; i++) pa.setY(i, pa.getY(i)); for (let i = 0; i < pa.count; i++){ const x = pa.getX(i); pa.setZ(i, -x * x * .07); } wg.computeVertexNormals();
+  const wing = new THREE.Mesh(wg, new THREE.MeshStandardMaterial({color: 0xff7a1a, side: THREE.DoubleSide, roughness: .7})); wing.rotation.x = -PI / 2 + .25; wing.position.y = 2.25; glider.add(wing);
+  [-1.2, 1.2].forEach(x => { const c = new THREE.Mesh(new THREE.CylinderGeometry(.015, .015, 1.4, 4), new THREE.MeshBasicMaterial({color: 0x222222})); c.position.set(x * .6, 1.75, 0); c.rotation.z = -x * .35; glider.add(c); }); }
+glider.visible = false; player.add(glider);
 const shieldBubble = new THREE.Mesh(new THREE.SphereGeometry(1.15, 18, 12), new THREE.MeshBasicMaterial({color: 0x6fe7ff, transparent: true, opacity: .22, depthWrite: false}));
 shieldBubble.position.y = 1.05; shieldBubble.visible = false; player.add(shieldBubble);
 
@@ -734,6 +743,18 @@ function addObs(type, lane, z){
     piv.traverse(m => { if (m.isMesh) m.castShadow = true; });
     o.piv = piv; o.side = side; o.fall = 0; o.need = 'jump'; o.h = .62;
   }
+  if (type === 'roller'){
+    const rk = at(mesh(G.rock, 0x8a857b, 1.25, 1.2, 1.25), 0, 1.2, 0); g.add(rk); o.rock = rk; o.need = 'avoid'; o.rolling = false;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({map: warnTex, depthTest: false})); sp.scale.set(.9, .9, 1); sp.position.y = 3; g.add(sp); o.warn = sp;
+  }
+  if (type === 'swinger'){
+    const beam = at(mesh(G.branch, 0x5e4128, 1.6, 1.8, 1.6), 0, 7.6, 0); beam.rotation.z = PI / 2; g.add(beam);
+    [-6.4, 6.4].forEach(bx2 => g.add(at(mesh(G.trunk, 0x5e4128, 1.8, 5.2, 1.8), bx2, 3.9, 0)));
+    const piv = new THREE.Group(); piv.position.y = 7.5; g.add(piv);
+    [-.9, .9].forEach(dz => { const rope = at(mesh(G.cyl, 0xc9b07a, .035, 6.2, .035), 0, -3.1, dz); piv.add(rope); });
+    const ram = at(mesh(G.log, 0x7a5232, 1.45, .48, 1.45), 0, -6.1, 0); ram.rotation.x = PI / 2; piv.add(ram);
+    o.piv2 = piv; o.need = 'swing'; o.ph = Math.random() * 6.28;
+  }
   g.position.set(x, 0, z); scene.add(g); obs.push(o);
 }
 const BEAM_GEO = new THREE.CylinderGeometry(.42, .42, 7, 16, 1, true); BEAM_GEO.translate(0, 3.5, 0);
@@ -775,6 +796,10 @@ function addItem(kind, lane, z){
   it.x = LANES[lane]; g.position.set(it.x, 1, z); scene.add(g); items.push(it);
 }
 function addCoins(lane, z, n){ for (let i = 0; i < n; i++) addItem('coin', lane, z - i * 2.05); }
+function skyCoins(){
+  const n = Math.floor(S.speed * 6.2 / 2.3);
+  for (let i = 0; i < n; i++){ const ln = Math.round(1 + Math.sin(i * .28) * 1.02); addItem(i % 11 === 10 ? 'p_magnet' : 'coin', Math.max(0, Math.min(2, ln)), S.z - 9 - i * 2.3); const it = items[items.length - 1]; it.y0 = 5.4; it.g.position.y = 5.4; }
+}
 function addArc(lane, z, n){ for (let i = 0; i < n; i++){ addItem('coin', lane, z + 3.2 - i * 1.3); const it = items[items.length - 1]; it.y0 = 1 + Math.sin(i / (n - 1) * PI) * 1.6; it.g.position.y = it.y0; } }
 const FOODS = ['apple', 'banana', 'berries', 'mango', 'orange', 'grapes', 'watermelon', 'coconut', 'pineapple'];
 const FOOD_EN = {apple: 20, banana: 22, berries: 14, mango: 28, orange: 20, grapes: 18, watermelon: 18, coconut: 14, pineapple: 30};
@@ -785,7 +810,8 @@ const POWERS = {
   magnet: {name: 'Magnet', info: 'Pulls in nearby coins', color: 0xffd23a, css: '#ffd23a', dur: 10},
   slow:   {name: 'Slow-mo', info: 'More time to react', color: 0xb98cff, css: '#b98cff', dur: 6},
   dj:     {name: 'Double jump', info: 'Swipe up again in the air', color: 0x7bd389, css: '#7bd389', dur: 12},
-  sprint: {name: 'Sprint', info: 'Super speed, smash through, tiger falls back', color: 0xff5a36, css: '#ff5a36', dur: 5}
+  sprint: {name: 'Sprint', info: 'Super speed, smash through, tiger falls back', color: 0xff5a36, css: '#ff5a36', dur: 5},
+  glide:  {name: 'Glider', info: 'Fly over the jungle and grab the sky coins', color: 0x6fd3ff, css: '#6fd3ff', dur: 6.5}
 };
 
 /* ----- decision events ----- */
@@ -1049,7 +1075,7 @@ let tigerOff = 12, tigerX = 0, phase = 'menu', menuAngle = 0, elapsed = 0, shake
 function freshState(){
   return {z: 0, x: 0, lane: 1, y: 0, vy: 0, slide: 0, speed: 11, t: 0, hp: 100, en: 100, gap: 60, coins: 0, dist: 0,
     inv: 0, stumble: 0, dec: 0, decGood: 0, spawnZ: -34, nextEventZ: -150, cause: '', runPhase: 0, lastStep: 0, roared: false, overT: 0, lastEventType: '',
-    score: 0, mult: 1, wa: 100, pw: {shield: 0, magnet: 0, slow: 0, dj: 0, sprint: 0}, djUsed: false, misDone: 0, misT: 0, lastHitDist: 0,
+    score: 0, mult: 1, baseMult: 1, boost: 1, combo: 0, surge: null, surgeT: 34, wa: 100, pw: {shield: 0, magnet: 0, slow: 0, dj: 0, sprint: 0, glide: 0}, djUsed: false, misDone: 0, misT: 0, lastHitDist: 0,
     st: {dist: 0, coins: 0, good: 0, pups: 0, water: 0, food: 0, time: 0, clean: 0, rain: 0, boar: 0, river: 0, med: 0, hard: 0, daily: 0, fire: 0}};
 }
 function clearWorld(){
@@ -1061,7 +1087,7 @@ function startRun(){
   audioInit();
   clearWorld(); S = freshState(); rainAmt = 0; rainTarget = 0; weatherT = 70;
   S.mode = profile.mode || 'endless';
-  S.mult = scoreMult() * (S.mode === 'hard' ? 2 : 1);
+  S.baseMult = scoreMult() * (S.mode === 'hard' ? 2 : 1); S.mult = S.baseMult;
   gr = S.mode === 'daily' ? seeded(90210 + dayNo() * 7919) : Math.random;
   decor.forEach(d => placeDecor(d, 14 - Math.random() * 160));
   $('menu').hidden = true; $('over').hidden = true; $('pauseSheet').hidden = true; muteBtn.hidden = true;
@@ -1086,15 +1112,20 @@ function spawnPattern(z){
     else { addObs('log', -1, z); addItem(supply(), L, z - 5); }
     return;
   }
-  if (r < .17){ addObs('boulder', L, z); addCoins(other(), z + 2, 5); }
-  else if (r < .31){ [0, 1, 2].filter(i => i !== L).forEach(i => addObs('boulder', i, z)); addCoins(L, z + 4, 4); }
-  else if (r < .43) addObs('log', -1, z);
-  else if (r < .50) addObs('branch', -1, z);
-  else if (r < .57) addObs('faller', -1, z);
-  else if (r < .66){ addObs('snake', L, z); addItem(supply(), other(), z); }
-  else if (r < .77){ addObs('stump', L, z); addObs('stump', (L + 1) % 3, z - 7); }
-  else if (r < .89) addObs('boar', L, z - 10);
-  else { addCoins(L, z + 4, 6); addItem(supply(), (L + 2) % 3, z - 3); }
+  const hard = Math.min(1, S.dist / 2500);
+  if (r < .11) addObs('boulder', L, z);
+  else if (r < .2) [0, 1, 2].filter(i => i !== L).forEach(i => addObs('boulder', i, z));
+  else if (r < .28) addObs('log', -1, z);
+  else if (r < .35) addObs('branch', -1, z);
+  else if (r < .4) addObs('faller', -1, z);
+  else if (r < .47){ addObs('snake', L, z); addItem(supply(), other(), z); }
+  else if (r < .54){ addObs('stump', L, z); addObs('stump', (L + 1) % 3, z - 8); }
+  else if (r < .61) addObs('boar', L, z - 10);
+  else if (r < .69 + hard * .04) addObs('roller', L, z - 4);
+  else if (r < .76 + hard * .04) addObs('swinger', -1, z);
+  else if (r < .85){ addObs('boulder', L, z); addObs('boulder', (L + 1 + grnd(2)) % 3, z - 9); }
+  else if (r < .93){ addObs('log', -1, z); addObs('branch', -1, z - 13); }
+  else { const J = grnd(3); [0, 1, 2].forEach(i => addObs(i === J ? 'stump' : 'boulder', i, z)); }
   if (S.mode !== 'hard' && gr() < .05) addItem('med', grnd(3), z - 9);
   if (S.dist > 30 && gr() < .16) addItem('p_' + gpick(Object.keys(POWERS)), grnd(3), z - 11);
 }
@@ -1105,7 +1136,7 @@ function fillGap(z, len){
   const z0 = z + 1.5; let z1 = z - len + 2.5;
   for (const e of events) if (e.z0 + 18 < z0 && e.z0 + 18 > z1) z1 = e.z0 + 18;   // stop before a fork so coins never lead into a danger lane
   const inWin = o => !o.done && o.z <= z0 + 1 && o.z >= z1 - 1;
-  const blocked = l => obs.some(o => inWin(o) && o.lane === l && o.need === 'avoid') || obs.some(o => o.type === 'boar' && !o.done && o.lane === l && o.z > z1 - 12);
+  const blocked = l => obs.some(o => inWin(o) && o.lane === l && o.need === 'avoid') || obs.some(o => (o.type === 'boar' || o.type === 'roller') && !o.done && o.lane === l && o.z > z1 - 16);
   const lanes = [0, 1, 2].filter(l => !blocked(l));
   if (!lanes.length) return;
   let lane = lanes.includes(S.coinLane) && gr() < .7 ? S.coinLane : gpick(lanes);
@@ -1136,15 +1167,33 @@ function inEventZone(z){ return events.some(e => z < e.z0 + 16 && z > e.z0 - 20)
 let timeScale = 1, slowT = 0, nearCD = 0, bendTX = 0, bendTY = 0;
 function nearMiss(big, jump){
   if (nearCD > 0) return; nearCD = 2.5;
-  slowT = big ? .7 : .45; S.coins += big ? 5 : 3; S.score += (big ? 250 : 150) * S.mult;
+  slowT = big ? .7 : .45; S.coins += big ? 5 : 3; addCombo(big ? 10 : 8); S.score += (big ? 250 : 150) * S.mult;
   toast(jump ? 'CLOSE ONE!' : big ? 'WHOA! CLOSE CALL' : 'CLOSE CALL!', `+${big ? 5 : 3} coins`, 'good');
   noise(.5, 3000, .12, 'bandpass', 0, 400); buzz(25);
 }
+/* ---- combo multiplier + tiger surge ---- */
+function setMult(){ const b = 1 + Math.min(5, Math.floor(S.combo / 30)); if (b !== S.boost){ const up = b > S.boost; S.boost = b; if (up){ bump('mult'); [880, 1175, 1568].forEach((f, i) => tone(f, .12, 'square', .03, i * .05)); } } S.mult = S.baseMult + S.boost - 1; }
+function addCombo(n){ S.combo += n; setMult(); }
+function dodged(n){
+  addCombo(n);
+  if (S.surge){ S.surge.got++; if (S.surge.got >= S.surge.need) escapeSurge(); else toast(`DODGE ${S.surge.got}/${S.surge.need}`, '', 'mid'); }
+}
+function startSurge(){
+  S.surge = {left: 9, need: 3, got: 0};
+  if (!playS('roar', 1, 1.05)) sfx.roar(); shake = .6; buzz([80, 40, 120]);
+  toast('TIGER ATTACK!', 'Dodge 3 obstacles to escape', 'bad');
+}
+function escapeSurge(){
+  S.surge = null; S.surgeT = 32 + gr() * 14; S.gap = Math.min(100, S.gap + 35);
+  S.coins += 15; S.score += 1000 * S.mult; addCombo(15); slowT = .5;
+  toast('ESCAPED!', '+15 coins · tiger falls back', 'good'); sfx.good(); buzz([20, 30, 20]);
+}
+function bump(id){ const el = $(id); if (!el) return; el.classList.remove('pop'); void el.offsetWidth; el.classList.add('pop'); }
 function hit(dmg, why){
   if (S.inv > 0) return;
-  if (S.pw.sprint > 0){ dust(10, true); shake = .35; sfx.crash(); buzz(30); S.coins += 2; toast('SMASH!', '+2 coins', 'good'); return; }
+  if (S.pw.sprint > 0){ dust(10, true); shake = .35; sfx.crash(); buzz(30); S.coins += 2; addCombo(3); toast('SMASH!', '+2 coins', 'good'); return; }
   if (S.pw.shield > 0){ S.pw.shield = 0; S.inv = .7; shake = .25; sfx.shield(); buzz(30); toast('Shield blocked it!', why.replace('!', ''), 'good'); return; }
-  S.lastHitDist = S.dist; dust(8, true); S.hitT = .55; S.hitKind = /head|tree/i.test(why) ? 'hithead' : 'hit';
+  S.lastHitDist = S.dist; dust(8, true); S.hitStamp = (S.hitStamp || 0) + 1; if (S.combo > 0){ S.combo = 0; setMult(); } S.hitT = .55; S.hitKind = /head|tree/i.test(why) ? 'hithead' : 'hit';
   if (S.mode === 'hard') dmg = Math.round(dmg * 1.6);
   S.hp -= dmg; S.gap -= 22; S.inv = .8; S.stumble = .7; shake = .5;
   flash(); sfx.hit(); buzz([40, 30, 60]);
@@ -1436,7 +1485,7 @@ function update(dt){
   if (phase === 'play'){
     S.t += dt;
     const lowEn = S.en < 20;
-    S.speed = Math.min(26, 14 + S.t * .09);
+    S.speed = Math.min(30, 15 + S.t * .11);
     for (const k in S.pw) S.pw[k] = Math.max(0, S.pw[k] - dt);
     const slowK = S.pw.slow > 0 ? .55 : 1;
     let v = S.speed * (S.pw.sprint > 0 ? 1.55 : 1) * (lowEn ? .85 : 1) * (S.wa < 15 ? .9 : 1) * (S.stumble > 0 ? .6 : 1) * slowK;
@@ -1448,7 +1497,9 @@ function update(dt){
     S.wa = Math.max(0, S.wa - dt * (.85 + (1 - night) * .2));
     if (S.wa <= 0){ S.hp -= dt * 4; if (S.hp <= 0) die('Dehydrated. Grab water bottles on the way.'); }
     if (S.y === 0) S.djUsed = false;
-    S.gap = Math.min(100, S.gap + dt * (S.pw.sprint > 0 ? 9 : lowEn ? -.6 : 1.7));
+    S.gap = Math.min(100, S.gap + dt * (S.pw.sprint > 0 ? 9 : S.surge ? -6.5 : lowEn ? -.6 : 1.7));
+    if (S.surge){ S.surge.left -= dt; if (S.surge.left <= 0){ S.surge = null; S.surgeT = 26 + gr() * 12; } }
+    else if (S.dist > 200 && !S.pw.glide && !events.some(e => !e.resolved && S.z - e.z0 > -12 && S.z - e.z0 < 95)){ S.surgeT -= dt; if (S.surgeT <= 0) startSurge(); }
     if (S.gap <= 0){ S.gap = 0; die('The tiger caught up with you.'); }
     S.st.hard = S.mode === 'hard' ? S.dist : 0; S.st.daily = S.mode === 'daily' ? S.dist : 0;
     S.st.dist = S.dist; S.st.coins = S.coins; S.st.good = S.decGood; S.st.time = S.t; S.st.clean = S.dist - S.lastHitDist; if (rainAmt > .6) S.st.rain += dt;
@@ -1457,7 +1508,8 @@ function update(dt){
     if (S.gap > 45) S.roared = false;
     // movement
     const tx = LANES[S.lane]; S.x += (tx - S.x) * Math.min(1, dt * (14 - rainAmt * 5));
-    S.vy -= 27 * dt; S.y = Math.max(0, S.y + S.vy * dt); if (S.y === 0) S.vy = 0;
+    if (S.pw.glide > 0){ S.y += (4.4 - S.y) * Math.min(1, dt * 2.6); S.vy = 0; S.slide = 0; S.gliding = true; }
+    else { if (S.gliding){ S.gliding = false; S.inv = Math.max(S.inv, 1.1); } S.vy -= 27 * dt; S.y = Math.max(0, S.y + S.vy * dt); if (S.y === 0) S.vy = 0; }
     S.slide = Math.max(0, S.slide - dt);
     // spawning
     while (S.nextEventZ > S.z - 135){
@@ -1465,23 +1517,34 @@ function update(dt){
       buildEvent(ty, S.nextEventZ); S.nextEventZ -= 230 + gr() * 90;
     }
     while (S.spawnZ > S.z - 110){
-      const segLen = 15 + gr() * 8 + S.speed * .5;
+      const segLen = S.dist < 160 ? 15 + gr() * 8 + S.speed * .5 : 10.5 + gr() * 6 + S.speed * .36;
       if (!inEventZone(S.spawnZ)){ spawnPattern(S.spawnZ); fillGap(S.spawnZ, segLen); }
       S.spawnZ -= segLen;
     }
     // obstacles
     const li = laneIdx();
     for (const o of obs){
+      if (o.type === 'roller' && o.z - S.z > -55){
+        if (!o.rolling){ o.rolling = true; noise(1.4, 160, .3, 'lowpass', 0, 60); }
+        o.z += 9 * dt * slowK; o.g.position.z = o.z; o.rock.rotation.x += dt * 9 * slowK / 1.2;
+        o.warn.visible = Math.sin(elapsed * 14) > -.3;
+        if (Math.random() < .5 && !profile.lowGfx) emit(o.g.position.x + (Math.random() - .5), .2, o.z - 1, {color: 0xa98a64, size: .6, life: .7, vy: .8, vz: -2, alpha: .4, grow: 1.4});
+      }
+      if (o.piv2){ const th = .62 * Math.sin(elapsed * 1.9 + o.ph); o.piv2.rotation.z = th; o.sx = -Math.sin(th) * 6.3; if (!o.creaked && o.z - S.z > -30){ o.creaked = true; sfx.creak(); } }
       if (o.type === 'boar' && o.z - S.z > -48){ o.z += 8 * dt * slowK; o.g.position.z = o.z; o.legs.forEach((l, i) => l.rotation.x = Math.sin(elapsed * 22 + i * PI) * .8); o.warn.visible = Math.sin(elapsed * 14) > -.3; }
       if (o.piv && o.fall < 1 && o.z - S.z > -32){ if (o.fall === 0){ sfx.creak(); } o.fall = Math.min(1, o.fall + dt * 1.5 / slowK); const e = o.fall * o.fall; o.piv.rotation.z = o.side * PI / 2 * e; if (o.fall === 1){ sfx.crash(); shake = Math.max(shake, .25); } }
       if (!o.done && o.z - S.z >= -.7){
         o.done = true;
+        if (S.y > 3) continue;
+        if (o.need === 'swing'){ if (Math.abs(o.sx - S.x) < 1.25) hit(20, 'Smashed by the log trap!'); else dodged(Math.abs(o.sx - S.x) < 2.4 ? 6 : 3); continue; }
         const inLane = o.lane < 0 || o.lane === li;
-        if (!inLane){ if (o.type === 'boar') S.st.boar++; if (o.need === 'avoid' && o.lane >= 0 && Math.abs(o.lane - li) === 1 && S.t - (S.laneT ?? -9) < .42) nearMiss(o.type === 'boar'); continue; }
+        const hs = S.hitStamp || 0;
+        if (!inLane){ if (o.need === 'avoid' && o.lane >= 0 && Math.abs(o.lane - li) === 1) dodged(2); if (o.type === 'boar') S.st.boar++; if (o.need === 'avoid' && o.lane >= 0 && Math.abs(o.lane - li) === 1 && S.t - (S.laneT ?? -9) < .42) nearMiss(o.type === 'boar'); continue; }
         if (o.need === 'jump' && S.y >= o.h && S.y < o.h + .28 && o.type !== 'snake') nearMiss(false, true);
         if (o.need === 'jump' && S.y < o.h) hit(o.type === 'snake' ? 18 : o.type === 'faller' ? 20 : 15, o.type === 'snake' ? 'Snake bite!' : o.type === 'faller' ? 'Hit by a falling tree!' : 'Tripped!');
         else if (o.need === 'slide' && S.slide <= 0) hit(15, 'Branch to the head!');
-        else if (o.need === 'avoid') hit(o.type === 'boar' ? 22 : 18, o.type === 'boar' ? 'Boar charge!' : 'Crashed into a rock!');
+        else if (o.need === 'avoid') hit(o.type === 'boar' ? 22 : o.type === 'roller' ? 24 : 18, o.type === 'boar' ? 'Boar charge!' : o.type === 'roller' ? 'Flattened by a boulder!' : 'Crashed into a rock!');
+        if ((S.hitStamp || 0) === hs) dodged(4);
       }
     }
     // items
@@ -1489,11 +1552,11 @@ function update(dt){
       if (it.done) continue;
       const dz = it.z - S.z;
       if (S.pw.magnet > 0 && it.kind === 'coin' && dz > -10 && dz < 1){ it.x += (S.x - it.x) * Math.min(1, dt * 10); it.g.position.x = it.x; it.z += (S.z - it.z) * Math.min(1, dt * 4); it.g.position.z = it.z; }
-      if (dz > -1.05 && dz < 1.05 && Math.abs(it.x - S.x) < 1.25 && (it.kind === 'coin' ? Math.abs(S.y + 1 - (it.y0 || 1)) < 1.35 : S.y < 2.2)){
+      if (dz > -1.05 && dz < 1.05 && Math.abs(it.x - S.x) < 1.25 && (it.kind === 'coin' ? Math.abs(S.y + 1 - (it.y0 || 1)) < 1.35 : it.y0 > 3 ? S.y > 3 : S.y < 2.2)){
         it.done = true; scene.remove(it.g);
-        if (it.kind === 'coin'){ S.coins++; S.score += 10 * S.mult; sfx.coin(); if (!profile.lowGfx) sparkle(it.x, 1.1, S.z - .5, 0xffd23a); }
+        if (it.kind === 'coin'){ S.coins++; S.score += 10 * S.mult; addCombo(1); if (S.coins % 5 === 0) bump('coinBox'); sfx.coin(); if (!profile.lowGfx) sparkle(it.x, 1.1, S.z - .5, 0xffd23a); }
         else if (it.kind === 'water'){ S.wa = Math.min(100, S.wa + 32); S.st.water++; sfx.drink(); buzz(15); }
-        else if (it.kind.startsWith('p_')){ const k = it.kind.slice(2), P = POWERS[k]; S.pw[k] = P.dur; S.st.pups++; sfx.power(); buzz([20, 30, 20]); toast(P.name, P.info, 'info'); }
+        else if (it.kind.startsWith('p_')){ const k = it.kind.slice(2), P = POWERS[k]; S.pw[k] = P.dur; if (k === 'glide') skyCoins(); S.st.pups++; sfx.power(); buzz([20, 30, 20]); toast(P.name, P.info, 'info'); }
         else if (it.kind === 'med'){ S.st.med++; S.hp = Math.min(100, S.hp + 30); sfx.med(); toast('First aid', '+30 health', 'good'); buzz(20); }
         else { S.en = Math.min(100, S.en + (FOOD_EN[it.kind] || 20)); S.wa = Math.min(100, S.wa + (FOOD_WA[it.kind] || 0)); S.st.food++; sfx.eat(); buzz(15); if (!profile.lowGfx) sparkle(it.x, 1.1, S.z - .5, 0x8dff7a); }
       }
@@ -1506,7 +1569,7 @@ function update(dt){
       if (!ev.resolved && d > 0){ const tk = Math.floor(d / 12); if (d < 60 && tk !== ev.ticked){ ev.ticked = tk; sfx.tick(); } }
       if (!ev.resolved && S.z <= ev.z0 - 6){
         ev.resolved = true; S.dec++;
-        const role = ev.roles[laneIdx()], E = EVENTS[ev.type];
+        const role = S.y > 3 ? 'safe' : ev.roles[laneIdx()], E = EVENTS[ev.type];
         if (role !== 'safe') S.lastHitDist = S.dist;
         if (role === 'safe' && ev.type === 'river') S.st.river++;
         if (role === 'safe' && ev.type === 'fire') S.st.fire++;
@@ -1592,6 +1655,7 @@ function update(dt){
     body.rotation.z = (LANES[S.lane] - S.x) * -.12;
   }
   player.visible = !(S.inv > 0 && Math.sin(elapsed * 40) > 0 && phase === 'play');
+  glider.visible = phase === 'play' && S.pw.glide > 0 && S.y > .5;
   shieldBubble.visible = phase === 'play' && S.pw.shield > 0; if (shieldBubble.visible){ shieldBubble.material.opacity = .16 + Math.sin(elapsed * 6) * .06 + (S.pw.shield < 3 ? (Math.sin(elapsed * 20) > 0 ? .1 : -.1) : 0); }
   pShadow.position.set(S.x, .03, S.z); const sh = 1 / (1 + S.y * .5); pShadow.scale.set(.55 * sh, .45 * sh, 1);
 
@@ -1602,7 +1666,7 @@ function update(dt){
     if (phase === 'play' || (phase === 'intro' && S.introT > 1.95)){
       want = 'run';
       if (S.slide > 0 && hasAct('slide')){ want = 'slide'; once = true; }
-      else if (S.y > .05 && hasAct('jump')){ want = 'jump'; once = true; }
+      else if (S.y > .05 && hasAct('jump') && !(S.pw.glide > 0)){ want = 'jump'; once = true; }
       else if (S.hitT > 0 && hasAct(S.hitKind || 'hit')){ want = S.hitKind || 'hit'; once = true; }
       else if (S.hitT > 0 && hasAct('hit')){ want = 'hit'; once = true; }
     } else if ((phase === 'dying' || phase === 'over') && S.gap <= 0 && hasAct('fall')){ want = 'fall'; once = true; }
@@ -1620,10 +1684,11 @@ function update(dt){
     if (mixer) mixer.update(dt);
     hero.rotation.set(0, 0, 0); hero.position.set(0, 0, 0);
     if (phase === 'play'){
-      if (S.slide > 0 && !hasAct('slide')){ hero.rotation.x = 1.2; hero.position.y = .35; }
+      if (S.pw.glide > 0 && S.y > .5){ hero.rotation.x = -.55; }
+      else if (S.slide > 0 && !hasAct('slide')){ hero.rotation.x = 1.2; hero.position.y = .35; }
       else if (S.y > .05 && !hasAct('jump')){ hero.rotation.x = -.25; }
       else if (S.y <= .05 && S.slide <= 0) hero.rotation.x = -.06;
-      if (S.y > .05 && hasAct('jump')) hero.position.y = -Math.min(S.y, .55);
+      if (S.y > .05 && hasAct('jump') && !(S.pw.glide > 0)) hero.position.y = -Math.min(S.y, .55);
       hero.rotation.z = (LANES[S.lane] - S.x) * .14;
     } else if ((phase === 'dying' || phase === 'over') && !hasAct('death') && !(S.gap <= 0 && hasAct('fall'))){
       hero.rotation.x = Math.min(1.45, S.overT * 2.4) * (S.gap <= 0 ? -1 : 1);
@@ -1682,13 +1747,13 @@ function update(dt){
   } else {
     const close = Math.max(0, 45 - S.gap);
     const back = 5.0 + close * .085;
-    camGoal.set(S.x * .7, 3.45 + (S.slide > 0 ? -.5 : 0) + S.y * .35 + close * .05, S.z + back);
+    camGoal.set(S.x * .7, 3.45 + (S.slide > 0 ? -.5 : 0) + S.y * (S.pw.glide > 0 ? .5 : .35) + close * .05, S.z + back);
     camera.position.lerp(camGoal, 1 - Math.pow(.0008, dt));
     if (shake > 0){ shake = Math.max(0, shake - dt); camera.position.x += (Math.random() - .5) * shake; camera.position.y += (Math.random() - .5) * shake; }
     if (phase === 'play' && S.y === 0 && S.slide <= 0){ camera.position.y += Math.abs(Math.sin(S.runPhase)) * .07 - .035; camera.position.x += Math.sin(S.runPhase) * .03; }
-    camera.lookAt(S.x * .55, .9, S.z - 9);
+    camera.lookAt(S.x * .55, .9 + (S.pw.glide > 0 ? S.y * .7 : 0), S.z - 9);
     camera.rotateZ((LANES[S.lane] - S.x) * .022 - BEND.value.x * 22);
-    const fovT = baseFov + (phase === 'play' ? (S.speed - 14) * .55 + (S.pw.sprint > 0 ? 14 : 0) : 0); if (Math.abs(camera.fov - fovT) > .05){ camera.fov += (fovT - camera.fov) * Math.min(1, dt * 2); camera.updateProjectionMatrix(); }
+    const fovT = baseFov + (phase === 'play' ? (S.speed - 14) * .6 + (S.pw.sprint > 0 ? 14 : 0) + (S.pw.glide > 0 ? 8 : 0) + (S.surge ? 5 : 0) : 0); if (Math.abs(camera.fov - fovT) > .05){ camera.fov += (fovT - camera.fov) * Math.min(1, dt * 2); camera.updateProjectionMatrix(); }
     drawLines(phase === 'play' ? (S.pw.sprint > 0 ? 1.4 : Math.max(0, (S.speed - 15) / 11)) : 0);
   }
   const dang = phase === 'play' ? Math.max(0, (40 - S.gap) / 40) : 0;
@@ -1725,6 +1790,7 @@ function renderHud(){
   if (hudCache.c !== S.coins){ hudCache.c = S.coins; $('coins').textContent = S.coins; }
   const sc = Math.floor(S.score); if (hudCache.s !== sc){ hudCache.s = sc; $('score').textContent = sc.toLocaleString('en-US'); }
   if (hudCache.m !== S.mult){ hudCache.m = S.mult; $('mult').textContent = 'x' + S.mult; }
+  const cf = S.boost >= 6 ? 100 : Math.round((S.combo % 30) / 30 * 100); if (hudCache.cf !== cf){ hudCache.cf = cf; $('comboFill').style.width = cf + '%'; }
 }
 
 let baseFov = 62;
@@ -1746,7 +1812,7 @@ function loop(){
   requestAnimationFrame(loop);
 }
 
-window.__ws = {get S(){ return S; }, BEND, camera, scene, path, grass, get phase(){ return phase; }};
+window.__ws = {get S(){ return S; }, BEND, camera, scene, path, grass, get phase(){ return phase; }, get obs(){ return obs; }, get items(){ return items; }, step(n, d){ for (let i = 0; i < n && phase === 'play'; i++) update(d || 1 / 60); }};
 S = freshState(); resize(); renderPickers(); renderBest(); syncMute(); loadChars(); loadTiger(); loadCroc(); loadTrees(); setupComposer(); applyGfx(); renderMenu();
 loop();
 })();

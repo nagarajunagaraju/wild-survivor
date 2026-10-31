@@ -14,11 +14,14 @@ Every push to `main` builds a fresh APK automatically (Actions tab).
 - Swipe controls: left/right lanes, up jump, down slide (arrow keys on desktop)
 - Tiger chase: a photo-textured rigged tiger with a real run cycle (from Sketchfab "running tiger"; check its licence and credit the author before release), with the shape-built tiger as fallback. It with snapping jaws closes in when you get hit; the camera rises so you see it behind you
 - Crocodile that lunges and snaps when you pick its lane; bear that rears up out of the den roaring
-- Obstacles: boulders, stumps, logs, snakes, low branches, charging boars, falling trees
+- Obstacles: boulders, stumps, logs, snakes, low branches, charging boars, falling trees, rolling boulders that come down the trail at you, swinging log traps (read the swing and time your lane)
+- Non-stop pace: obstacle groups every 10-16 m after the warm-up, combo patterns (double boulders, log then branch, rock walls with one jumpable gap), speed ramps to 30 m/s
+- Combo multiplier: coins, dodges, jumps and close calls fill the combo bar; every 30 raises the in-run multiplier (up to +5), one hit resets it
+- Tiger attacks: every 30-45 s the tiger surges with a roar and the gap drains fast; dodge 3 obstacles to escape for +15 coins and a big score bonus
 - Fork decisions read from clues: river (crocodile / slippery rocks / logs), gorge (bridges), rock wall (bear den / thorns / daylight), rockslide (shadows), forest fire (flames / embers / stream)
 - Survival: health, energy, water; nine fruits (apple, banana, berries, mango, orange, grapes, watermelon, coconut, pineapple) with different energy/water values, water bottles, first-aid kits
 - Curved world: the trail visibly winds left/right and over hills (vertex bend), camera leans into curves
-- Power-ups with light beams, spawning often: Shield, Magnet, Slow-mo, Double jump, Sprint (super speed, smash through obstacles, tiger falls back), each with an on-screen timer
+- Power-ups with light beams, spawning often: Shield, Magnet, Slow-mo, Double jump, Sprint (super speed, smash through obstacles, tiger falls back), Glider (fly above the jungle along a line of sky coins, land safely), each with an on-screen timer
 - Subway-Surfers-style coins: gold star coins with a rim and glow, spaced 2 m apart, on a wider trail seen from a higher camera; a continuous coin line fills every stretch, stays in one lane where it can, arcs over jump obstacles and dips under branches, never runs into a fork; often a second line or fruit in another lane. 
 - Cinematic look: bloom, filmic tone curve and colour grade, vignette, film grain, sun shafts through the canopy, dappled leaf shadows on the trail, Temple-Run-style start: Remy runs at once and the tiger bursts out of the bushes onto the trail right behind him with a roar, then drops back, slow-motion close calls, side-camera tiger pounce on death, camera roll on lane changes, music that swells as the tiger closes in
 - Premium UI: Bebas Neue / Barlow (bundled), compact HUD with score, xN multiplier, coins and slim survival bars
