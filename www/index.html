@@ -543,7 +543,7 @@ const MODEL_BASE = window.WS_MODEL_BASE || 'models/';
 const CHARS = [
   {id: 'remy', name: 'Remy', desc: 'Backpacker who lost the trail. All he wants is to get home.', file: 'remy.glb', cost: 0, height: 1.8, shared: true, yaw: PI},
   {id: 'ranger', name: 'Ranger', desc: 'Ex-army tracker. Calm under pressure and knows the jungle.', file: 'Soldier.glb', idle: 'Idle', run: 'Run', cost: 0},
-  {id: 'shadow', name: 'Shadow', desc: 'Test athlete who escaped a research camp. Built to run.', file: 'Xbot.glb', idle: 'idle', run: 'run', cost: 300}
+  {id: 'shadow', name: 'Shadow', desc: 'Test athlete who escaped a research camp. Built to run.', file: 'Xbot.glb', idle: 'idle', run: 'run', cost: 2500}
 ];
 /* Shared Mixamo motion-capture clips; any Mixamo-rigged character can use them. */
 const SHARED_ANIMS = {run: 'anim_run.glb', jump: 'anim_jump.glb', slide: 'anim_slide.glb', hit: 'anim_hit.glb', death: 'anim_death.glb', fall: 'anim_fall.glb', hithead: 'anim_hithead.glb'};
@@ -765,7 +765,7 @@ function addArc(lane, z, n){ for (let i = 0; i < n; i++){ addItem('coin', lane, 
 const FOODS = ['apple', 'banana', 'berries', 'mango', 'orange', 'grapes', 'watermelon', 'coconut', 'pineapple'];
 const FOOD_EN = {apple: 20, banana: 22, berries: 14, mango: 28, orange: 20, grapes: 18, watermelon: 18, coconut: 14, pineapple: 30};
 const FOOD_WA = {watermelon: 14, coconut: 24, orange: 6};
-const supply = () => gr() < .42 ? 'water' : gpick(FOODS);
+const supply = () => gr() < .3 ? 'water' : gpick(FOODS);
 const POWERS = {
   shield: {name: 'Shield', info: 'Blocks the next hit', color: 0x6fe7ff, css: '#6fe7ff', dur: 14},
   magnet: {name: 'Magnet', info: 'Pulls in nearby coins', color: 0xffd23a, css: '#ffd23a', dur: 10},
@@ -999,8 +999,8 @@ const MISSION_POOL = [
   {id: 'd500', text: 'Run 500 m in one run', stat: 'dist', n: 500},
   {id: 'd1200', text: 'Run 1,200 m in one run', stat: 'dist', n: 1200},
   {id: 'd2500', text: 'Run 2,500 m in one run', stat: 'dist', n: 2500},
-  {id: 'c40', text: 'Collect 40 coins in a run', stat: 'coins', n: 40},
-  {id: 'c100', text: 'Collect 100 coins in a run', stat: 'coins', n: 100},
+  {id: 'c40', text: 'Collect 150 coins in a run', stat: 'coins', n: 150},
+  {id: 'c100', text: 'Collect 400 coins in a run', stat: 'coins', n: 400},
   {id: 'g3', text: 'Make 3 good calls at forks', stat: 'good', n: 3},
   {id: 'g6', text: 'Make 6 good calls at forks', stat: 'good', n: 6},
   {id: 'p2', text: 'Grab 2 power-ups', stat: 'pups', n: 2},
@@ -1049,17 +1049,16 @@ function startRun(){
   S.mode = profile.mode || 'endless';
   gr = S.mode === 'daily' ? seeded(90210 + dayNo() * 7919) : Math.random;
   decor.forEach(d => placeDecor(d, 14 - Math.random() * 160));
-  phase = 'intro'; S.introT = 0; tigerOff = 9; tigerX = -8;
-  $('menu').hidden = true; $('over').hidden = true; $('pauseSheet').hidden = true; $('hud').hidden = true; muteBtn.hidden = true;
-  cine(true); $('skipHint').hidden = false;
-  camera.position.set(S.x + 1.5, 1.55, S.z - 3.6);
+  $('menu').hidden = true; $('over').hidden = true; $('pauseSheet').hidden = true; muteBtn.hidden = true;
+  tigerOff = 3.3; tigerX = -7; S.entry = true;
+  camera.position.set(S.x * .7, 2.4, S.z + 3.6);
+  beginChase();
 }
 function cine(on){ document.body.classList.toggle('cine', on); }
 function beginChase(){
   phase = 'play'; cine(false); $('skipHint').hidden = true; $('hud').hidden = false;
   const h = $('ctrlHint'); h.hidden = false; h.style.opacity = 1; setTimeout(() => { h.style.opacity = 0; }, 3500);
-  toast(S.mode === 'daily' ? 'DAILY #' + dayNo() : S.mode === 'hard' ? 'HARDCORE' : 'RUN!', S.mode === 'hard' ? 'One wrong call and it is over' : 'The tiger is right behind you', 'info');
-  buzz(80);
+  toast(S.mode === 'daily' ? 'DAILY #' + dayNo() : S.mode === 'hard' ? 'HARDCORE' : 'RUN!', S.mode === 'hard' ? 'One wrong call and it is over' : '', 'info');
 }
 function laneIdx(){ return Math.max(0, Math.min(2, Math.round(S.x / 2.2) + 1)); }
 
@@ -1081,10 +1080,41 @@ function spawnPattern(z){
   else if (r < .77){ addObs('stump', L, z); addObs('stump', (L + 1) % 3, z - 7); }
   else if (r < .89) addObs('boar', L, z - 10);
   else { addCoins(L, z + 4, 6); addItem(supply(), (L + 2) % 3, z - 3); }
-  if (!early && gr() < .62){ const free = [0, 1, 2].filter(l => !obs.some(o => !o.done && Math.abs(o.z - z) < 9 && (o.lane === l || o.lane < 0))); if (free.length) addCoins(gpick(free), z - 4, 6 + grnd(4)); }
-  if (gr() < .5){ const jo = obs.find(o => !o.done && Math.abs(o.z - z) < 1 && o.need === 'jump' && o.lane >= 0); if (jo) addArc(jo.lane, jo.z, 7); }
   if (S.mode !== 'hard' && gr() < .05) addItem('med', grnd(3), z - 9);
   if (S.dist > 30 && gr() < .16) addItem('p_' + gpick(Object.keys(POWERS)), grnd(3), z - 11);
+}
+/* Fill the stretch after each obstacle group with a continuous coin line (Subway Surfers style):
+   it keeps to one lane while it can, hops over jump obstacles, ducks under branches,
+   and sometimes a second line or fruit sits in another lane so there is always more to chase. */
+function fillGap(z, len){
+  const z0 = z + 1.5; let z1 = z - len + 2.5;
+  for (const e of events) if (e.z0 + 18 < z0 && e.z0 + 18 > z1) z1 = e.z0 + 18;   // stop before a fork so coins never lead into a danger lane
+  const inWin = o => !o.done && o.z <= z0 + 1 && o.z >= z1 - 1;
+  const blocked = l => obs.some(o => inWin(o) && o.lane === l && o.need === 'avoid') || obs.some(o => o.type === 'boar' && !o.done && o.lane === l && o.z > z1 - 12);
+  const lanes = [0, 1, 2].filter(l => !blocked(l));
+  if (!lanes.length) return;
+  let lane = lanes.includes(S.coinLane) && gr() < .7 ? S.coinLane : gpick(lanes);
+  S.coinLane = lane;
+  const line = (l, from, to, withFruit) => {
+    const n = Math.max(0, Math.floor((from - to) / 1.35));
+    const fruitAt = withFruit ? 2 + grnd(Math.max(1, n - 4)) : -1;
+    for (let i = 0; i < n; i++){
+      const zi = from - i * 1.35;
+      addItem(i === fruitAt ? supply() : 'coin', l, zi);
+      const it = items[items.length - 1];
+      for (const o of obs){
+        if (!inWin(o) || (o.lane !== l && o.lane >= 0)) continue;
+        const d = Math.abs(zi - o.z);
+        if (o.need === 'jump' && d < 2.6) it.y0 = 1 + 1.45 * (1 - (d / 2.6) * (d / 2.6));
+        else if (o.need === 'slide' && d < 1.8) it.y0 = .45;
+      }
+      if (it.y0) it.g.position.y = it.y0;
+    }
+  };
+  line(lane, z0, z1, gr() < .4);
+  const others = lanes.filter(l => l !== lane);
+  if (others.length && gr() < .38){ const l2 = gpick(others), mid = (z0 + z1) / 2; line(l2, mid + 4, z1, gr() < .5); }
+  else if (others.length && gr() < .6) addItem(supply(), gpick(others), (z0 + z1) / 2);
 }
 function inEventZone(z){ return events.some(e => z < e.z0 + 16 && z > e.z0 - 20); }
 
@@ -1350,7 +1380,7 @@ function update(dt){
   rainAmt += (rainTarget - rainAmt) * Math.min(1, dt * .35);
   const sky = skyAt(cyc); sky.lerp(grey.clone().multiplyScalar(1 - night * .8), rainAmt * .6);
   scene.background.copy(sky); scene.fog.color.copy(sky);
-  scene.fog.near = 34 - night * 8 - rainAmt * 14; scene.fog.far = 135 - night * 25 - rainAmt * 50;
+  scene.fog.near = 48 - night * 18 - rainAmt * 20; scene.fog.far = 175 - night * 55 - rainAmt * 70;
   lightning = Math.max(0, lightning - dt * 3);
   hemi.intensity = .95 - night * .38 - rainAmt * .25 + lightning * 1.6; hemi.color.copy(HEMI_DAY).lerp(HEMI_NIGHT, night); hemi.groundColor.copy(HEMI_G_DAY).lerp(HEMI_G_NIGHT, night);
   moon.intensity = night * .6; moon.position.set(S.x + 8, 20, S.z - 10); moon.target.position.set(S.x, 0, S.z - 12); sun.intensity = Math.max(0, .85 - night * .72 - rainAmt * .5);
@@ -1418,8 +1448,9 @@ function update(dt){
       buildEvent(ty, S.nextEventZ); S.nextEventZ -= 230 + gr() * 90;
     }
     while (S.spawnZ > S.z - 110){
-      if (!inEventZone(S.spawnZ)) spawnPattern(S.spawnZ);
-      S.spawnZ -= 15 + gr() * 8 + S.speed * .5;
+      const segLen = 15 + gr() * 8 + S.speed * .5;
+      if (!inEventZone(S.spawnZ)){ spawnPattern(S.spawnZ); fillGap(S.spawnZ, segLen); }
+      S.spawnZ -= segLen;
     }
     // obstacles
     const li = laneIdx();
@@ -1586,9 +1617,16 @@ function update(dt){
   let tY = 0;
   if (phase === 'intro'){ const lp = Math.max(0, Math.min(1, (S.introT - 1.05) / .8)), le = lp * lp * (3 - 2 * lp); tigerX = -8 + (S.x + 8) * le; tigerOff = 9 - 3.2 * le; tY = Math.sin(lp * PI) * 1.7 * (lp < 1 ? 1 : 0); }
   else if (phase === 'dying' && S.pounce){ const pp = Math.min(1, S.overT / 1.05); tigerOff = S.pounceFrom + (-.4 - S.pounceFrom) * pp; tY = Math.sin(pp * PI) * 1.7; }
+  else if (phase === 'play' && S.entry){
+    const lp = Math.min(1, S.t / .65), le = lp * lp * (3 - 2 * lp);
+    tigerX = -7 + (S.x + 7) * le; tY = lp < 1 ? Math.sin(lp * PI) * 1.4 : 0;
+    if (S.t > .12 && !S.entryRoar){ S.entryRoar = true; if (!playS('roar', 1, .9)) sfx.roar(); shake = .5; buzz([60, 30, 90]); }
+    if (S.t > 1.2) tigerOff += ((1.4 + S.gap * .16) - tigerOff) * Math.min(1, dt * 1.6);
+    if (S.t > 3) S.entry = false;
+  }
   else if (phase !== 'menu') tigerOff += ((1.4 + S.gap * .16) - tigerOff) * Math.min(1, dt * 3.5);
-  tiger.position.z = S.z + tigerOff; if (phase === 'intro') tiger.position.x = tigerX; else tiger.position.x += (S.x - tiger.position.x) * Math.min(1, dt * 3);
-  tiger.rotation.y = phase === 'intro' && S.introT < 1.85 ? Math.min(.9, Math.max(0, (1.85 - S.introT) * 1.2)) * -1 : 0;
+  tiger.position.z = S.z + tigerOff; if (phase === 'intro' || (S.entry && S.t < .65)) tiger.position.x = tigerX; else tiger.position.x += (S.x - tiger.position.x) * Math.min(1, dt * 3);
+  tiger.rotation.y = S.entry && S.t < .65 ? -.85 * (1 - S.t / .65) : 0;
   tiger.position.y = tY;
   if (crocMixer) crocMixer.update(dt);
   if (tigerModel){

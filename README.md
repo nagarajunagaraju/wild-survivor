@@ -20,8 +20,8 @@ Every push to `main` builds a fresh APK automatically (Actions tab).
 - Survival: health, energy, water; nine fruits (apple, banana, berries, mango, orange, grapes, watermelon, coconut, pineapple) with different energy/water values, water bottles, first-aid kits
 - Curved world: the trail visibly winds left/right and over hills (vertex bend), camera leans into curves
 - Power-ups with light beams, spawning often: Shield, Magnet, Slow-mo, Double jump, Sprint (super speed, smash through obstacles, tiger falls back), each with an on-screen timer
-- Coin trails in free lanes and coin arcs over jump obstacles; easier pickup
-- Cinematic look: bloom, filmic tone curve and colour grade, vignette, film grain, sun shafts through the canopy, dappled leaf shadows on the trail, letterboxed intro where the tiger leaps out of the bushes behind Remy and the camera swings round as he runs (tap to skip), slow-motion close calls, side-camera tiger pounce on death, camera roll on lane changes, music that swells as the tiger closes in
+- Subway-Surfers-style coin density: a continuous coin line fills every stretch, stays in one lane where it can, arcs over jump obstacles and dips under branches, never runs into a fork; often a second line or fruit in another lane. Shadow now costs 2,500 coins
+- Cinematic look: bloom, filmic tone curve and colour grade, vignette, film grain, sun shafts through the canopy, dappled leaf shadows on the trail, Temple-Run-style start: Remy runs at once and the tiger bursts out of the bushes onto the trail right behind him with a roar, then drops back, slow-motion close calls, side-camera tiger pounce on death, camera roll on lane changes, music that swells as the tiger closes in
 - Premium UI: Bebas Neue / Barlow (bundled), glass HUD with icons
 - Modes: Endless, Daily (same seeded course for everyone each day, best saved), Hardcore (1.6x damage, one wrong fork ends the run, double coins)
 - 19 missions (+50 coins each), coin wallet, character unlock, saved progress
