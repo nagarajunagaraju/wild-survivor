@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bgtsfkwlkuyrp"
-path="res://.godot/imported/mossy_forest_2k.exr-f2885303559811bdec03d4ec3c5685a5.ctex"
+uid="uid://bqq4c2tgjtnk0"
+path="res://.godot/imported/mossy_forest_1k.exr-88e34a96e83d33073ceda0fba768b855.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://hdri/mossy_forest_2k.exr"
-dest_files=["res://.godot/imported/mossy_forest_2k.exr-f2885303559811bdec03d4ec3c5685a5.ctex"]
+source_file="res://hdri/mossy_forest_1k.exr"
+dest_files=["res://.godot/imported/mossy_forest_1k.exr-88e34a96e83d33073ceda0fba768b855.ctex"]
 
 [params]
 
