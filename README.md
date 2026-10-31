@@ -10,7 +10,7 @@ Tap the `.apk` file, then allow installs from your browser when Android asks.
 Every push to `main` builds a fresh APK automatically (Actions tab).
 
 ## What's in the game
-- Remy: realistic rigged character with Mixamo motion-capture idle, run, jump, hit and death animations
+- Rocky: realistic rigged character (Mixamo "Remy") with Mixamo motion-capture idle, run, jump, hit and death animations
 - Ranger and Shadow (unlocks for 300 coins) as extra runners
 - Swipe controls: left/right lanes, up jump, down slide (arrow keys on desktop)
 - Tiger chase: a photo-textured rigged tiger with a real run cycle (from Sketchfab "running tiger"; check its licence and credit the author before release), with the shape-built tiger as fallback. It with snapping jaws closes in when you get hit; the camera rises so you see it behind you
