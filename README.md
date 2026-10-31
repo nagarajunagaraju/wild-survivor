@@ -11,7 +11,6 @@ Every push to `main` builds a fresh APK automatically (Actions tab).
 
 ## What's in the game
 - Rocky: realistic rigged character (Mixamo "Remy") with Mixamo motion-capture idle, run, jump, hit and death animations
-- Ranger and Shadow (unlocks for 300 coins) as extra runners
 - Swipe controls: left/right lanes, up jump, down slide (arrow keys on desktop)
 - Tiger chase: a photo-textured rigged tiger with a real run cycle (from Sketchfab "running tiger"; check its licence and credit the author before release), with the shape-built tiger as fallback. It with snapping jaws closes in when you get hit; the camera rises so you see it behind you
 - Crocodile that lunges and snaps when you pick its lane; bear that rears up out of the den roaring
@@ -20,9 +19,10 @@ Every push to `main` builds a fresh APK automatically (Actions tab).
 - Survival: health, energy, water; nine fruits (apple, banana, berries, mango, orange, grapes, watermelon, coconut, pineapple) with different energy/water values, water bottles, first-aid kits
 - Curved world: the trail visibly winds left/right and over hills (vertex bend), camera leans into curves
 - Power-ups with light beams, spawning often: Shield, Magnet, Slow-mo, Double jump, Sprint (super speed, smash through obstacles, tiger falls back), each with an on-screen timer
-- Subway-Surfers-style coin density: a continuous coin line fills every stretch, stays in one lane where it can, arcs over jump obstacles and dips under branches, never runs into a fork; often a second line or fruit in another lane. Shadow now costs 2,500 coins
+- Subway-Surfers-style coins: gold star coins with a rim and glow, spaced 2 m apart, on a wider trail seen from a higher camera; a continuous coin line fills every stretch, stays in one lane where it can, arcs over jump obstacles and dips under branches, never runs into a fork; often a second line or fruit in another lane. 
 - Cinematic look: bloom, filmic tone curve and colour grade, vignette, film grain, sun shafts through the canopy, dappled leaf shadows on the trail, Temple-Run-style start: Remy runs at once and the tiger bursts out of the bushes onto the trail right behind him with a roar, then drops back, slow-motion close calls, side-camera tiger pounce on death, camera roll on lane changes, music that swells as the tiger closes in
-- Premium UI: Bebas Neue / Barlow (bundled), glass HUD with icons
+- Premium UI: Bebas Neue / Barlow (bundled), compact HUD with score, xN multiplier, coins and slim survival bars
+- Score: distance x multiplier, plus coins, close calls and good fork calls; every 3 missions completed raises the permanent multiplier (Hardcore doubles it); high score saved
 - Modes: Endless, Daily (same seeded course for everyone each day, best saved), Hardcore (1.6x damage, one wrong fork ends the run, double coins)
 - 19 missions (+50 coins each), coin wallet, character unlock, saved progress
 - Natural forest: instanced broadleaf trees with swaying leaves, a ragged-edged forest trail with pebbles, leaves and twigs, leaf-litter forest floor, grass clumps, fern bushes, mossy displaced rocks, bark-textured logs and stumps
