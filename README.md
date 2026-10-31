@@ -28,6 +28,7 @@ Every push to `main` builds a fresh APK automatically (Actions tab).
 - Score: distance x multiplier, plus coins, close calls and good fork calls; every 3 missions completed raises the permanent multiplier (Hardcore doubles it); high score saved
 - Modes: Endless, Daily (same seeded course for everyone each day, best saved), Hardcore (1.6x damage, one wrong fork ends the run, double coins)
 - 19 missions (+50 coins each), coin wallet, character unlock, saved progress
+- Photo-scanned Poly Haven trees, bushes, wildflowers and mossy boulders (CC0) along the trail; real mossy rocks as obstacles
 - Natural forest: instanced broadleaf trees with swaying leaves, a ragged-edged forest trail with pebbles, leaves and twigs, leaf-litter forest floor, grass clumps, fern bushes, mossy displaced rocks, bark-textured logs and stumps
 - Real crocodile model that surfaces and snaps in the river
 - Sky with sun, drifting clouds and stars, rippling river water
